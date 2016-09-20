@@ -8857,6 +8857,7 @@ var _user$project$View$row = F2(
 							},
 							cells)))));
 	});
+var _user$project$View$NewWorld = {ctor: 'NewWorld'};
 var _user$project$View$TogglePause = {ctor: 'TogglePause'};
 var _user$project$View$view = function (model) {
 	var pauseMessage = model.paused ? 'Unpause' : 'Pause';
@@ -8899,6 +8900,16 @@ var _user$project$View$view = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html$text(pauseMessage)
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Events$onClick(_user$project$View$NewWorld)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Seed new world')
 					]))
 			]));
 };
@@ -8944,7 +8955,7 @@ var _user$project$Main$update = F2(
 					_0: _user$project$Model$tick(model),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
-			default:
+			case 'TogglePause':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
@@ -8953,6 +8964,12 @@ var _user$project$Main$update = F2(
 							paused: _elm_lang$core$Basics$not(model.paused)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: model,
+					_1: _user$project$Main$randomStateGenerator(model.dimension)
 				};
 		}
 	});
