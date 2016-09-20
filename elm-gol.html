@@ -8824,12 +8824,30 @@ var _user$project$Model$tick = function (model) {
 		});
 };
 var _user$project$View$print = function (state) {
-	var _p0 = state;
-	if (_p0.ctor === 'Alive') {
-		return '👾';
-	} else {
-		return '👻';
-	}
+	var _p0 = function () {
+		var _p1 = state;
+		if (_p1.ctor === 'Alive') {
+			return {ctor: '_Tuple2', _0: '👾', _1: 'green'};
+		} else {
+			return {ctor: '_Tuple2', _0: '👻', _1: 'grey'};
+		}
+	}();
+	var txt = _p0._0;
+	var color = _p0._1;
+	return A2(
+		_elm_lang$html$Html$span,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$style(
+				_elm_lang$core$Native_List.fromArray(
+					[
+						{ctor: '_Tuple2', _0: 'color', _1: color}
+					]))
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html$text(txt)
+			]));
 };
 var _user$project$View$row = F2(
 	function (cells, rowNumber) {
@@ -8839,23 +8857,20 @@ var _user$project$View$row = F2(
 				[]),
 			A2(
 				_elm_lang$core$List$map,
-				_elm_lang$html$Html$text,
+				function (r) {
+					return _user$project$View$print(r.state);
+				},
 				A2(
-					_elm_lang$core$List$map,
+					_elm_lang$core$List$sortBy,
 					function (r) {
-						return _user$project$View$print(r.state);
+						return r.location.y;
 					},
 					A2(
-						_elm_lang$core$List$sortBy,
+						_elm_lang$core$List$filter,
 						function (r) {
-							return r.location.y;
+							return _elm_lang$core$Native_Utils.eq(r.location.x, rowNumber);
 						},
-						A2(
-							_elm_lang$core$List$filter,
-							function (r) {
-								return _elm_lang$core$Native_Utils.eq(r.location.x, rowNumber);
-							},
-							cells)))));
+						cells))));
 	});
 var _user$project$View$NewWorld = {ctor: 'NewWorld'};
 var _user$project$View$TogglePause = {ctor: 'TogglePause'};
