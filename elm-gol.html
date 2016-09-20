@@ -8775,6 +8775,18 @@ var _user$project$Model$Location = F2(
 		return {x: a, y: b};
 	});
 var _user$project$Model$Dead = {ctor: 'Dead'};
+var _user$project$Model$kill = function (cell) {
+	return _elm_lang$core$Native_Utils.update(
+		cell,
+		{state: _user$project$Model$Dead});
+};
+var _user$project$Model$killCells = function (model) {
+	return _elm_lang$core$Native_Utils.update(
+		model,
+		{
+			world: A2(_elm_lang$core$List$map, _user$project$Model$kill, model.world)
+		});
+};
 var _user$project$Model$Alive = {ctor: 'Alive'};
 var _user$project$Model$applyRules = F2(
 	function (nbLivingNeighbours, cell) {
@@ -8823,9 +8835,43 @@ var _user$project$Model$tick = function (model) {
 				model.world)
 		});
 };
-var _user$project$View$print = function (state) {
+var _user$project$Model$flip = function (state) {
+	var _p11 = state;
+	if (_p11.ctor === 'Alive') {
+		return _user$project$Model$Dead;
+	} else {
+		return _user$project$Model$Alive;
+	}
+};
+var _user$project$Model$toggleState = F2(
+	function (model, cell) {
+		var others = A2(
+			_elm_lang$core$List$filter,
+			function (c) {
+				return !_elm_lang$core$Native_Utils.eq(c, cell);
+			},
+			model.world);
+		var toggled = A2(
+			_elm_lang$core$Debug$log,
+			'toggled',
+			_elm_lang$core$Native_Utils.update(
+				cell,
+				{
+					state: _user$project$Model$flip(cell.state)
+				}));
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				world: A2(_elm_lang$core$List_ops['::'], toggled, others)
+			});
+	});
+var _user$project$View$KillCells = {ctor: 'KillCells'};
+var _user$project$View$ToggleState = function (a) {
+	return {ctor: 'ToggleState', _0: a};
+};
+var _user$project$View$print = function (cell) {
 	var _p0 = function () {
-		var _p1 = state;
+		var _p1 = cell.state;
 		if (_p1.ctor === 'Alive') {
 			return {ctor: '_Tuple2', _0: '👾', _1: 'green'};
 		} else {
@@ -8842,7 +8888,9 @@ var _user$project$View$print = function (state) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						{ctor: '_Tuple2', _0: 'color', _1: color}
-					]))
+					])),
+				_elm_lang$html$Html_Events$onClick(
+				_user$project$View$ToggleState(cell))
 			]),
 		_elm_lang$core$Native_List.fromArray(
 			[
@@ -8857,18 +8905,16 @@ var _user$project$View$row = F2(
 				[]),
 			A2(
 				_elm_lang$core$List$map,
-				function (r) {
-					return _user$project$View$print(r.state);
-				},
+				_user$project$View$print,
 				A2(
 					_elm_lang$core$List$sortBy,
-					function (r) {
-						return r.location.y;
+					function (c) {
+						return c.location.y;
 					},
 					A2(
 						_elm_lang$core$List$filter,
-						function (r) {
-							return _elm_lang$core$Native_Utils.eq(r.location.x, rowNumber);
+						function (c) {
+							return _elm_lang$core$Native_Utils.eq(c.location.x, rowNumber);
 						},
 						cells))));
 	});
@@ -8893,20 +8939,6 @@ var _user$project$View$view = function (model) {
 		_elm_lang$core$Native_List.fromArray(
 			[
 				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$style(
-						_elm_lang$core$Native_List.fromArray(
-							[
-								{ctor: '_Tuple2', _0: 'font-size', _1: '4em'}
-							]))
-					]),
-				A2(
-					_elm_lang$core$List$map,
-					_user$project$View$row(model.world),
-					_elm_lang$core$Native_List.range(0, nbRows))),
-				A2(
 				_elm_lang$html$Html$button,
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -8920,12 +8952,36 @@ var _user$project$View$view = function (model) {
 				_elm_lang$html$Html$button,
 				_elm_lang$core$Native_List.fromArray(
 					[
+						_elm_lang$html$Html_Events$onClick(_user$project$View$KillCells)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Kill all cells')
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
 						_elm_lang$html$Html_Events$onClick(_user$project$View$NewWorld)
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html$text('Seed new world')
-					]))
+					])),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$style(
+						_elm_lang$core$Native_List.fromArray(
+							[
+								{ctor: '_Tuple2', _0: 'font-size', _1: '4em'}
+							]))
+					]),
+				A2(
+					_elm_lang$core$List$map,
+					_user$project$View$row(model.world),
+					_elm_lang$core$Native_List.range(0, nbRows)))
 			]));
 };
 var _user$project$View$Tick = {ctor: 'Tick'};
@@ -8980,11 +9036,23 @@ var _user$project$Main$update = F2(
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
-			default:
+			case 'NewWorld':
 				return {
 					ctor: '_Tuple2',
 					_0: model,
 					_1: _user$project$Main$randomStateGenerator(model.dimension)
+				};
+			case 'ToggleState':
+				return {
+					ctor: '_Tuple2',
+					_0: A2(_user$project$Model$toggleState, model, _p1._0),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: _user$project$Model$killCells(model),
+					_1: _elm_lang$core$Platform_Cmd$none
 				};
 		}
 	});
