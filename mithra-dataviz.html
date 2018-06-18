@@ -19,8 +19,17 @@
     }
 
 </style>
+<div id="legend">
+    The <b>size</b> of a component represents the complexity of a component. The bigger the circle, the more complex a component. <br/>
+    The <span style="color: red;">color</style></span> represents the number of commits. The brighter red, the more active a component has been worked on. <br/>
+    <br/>
+    The big circles that are brightly red are interesting to investigate further: complex code where a lot of work is performed. <br/>
+    <br/>
+    Hover over a component to view complexity/commit details.
+</div>
 <div style="display: flex; justify-content: center"> <svg width="960" height="960"></svg></div>
 <script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
 <script>
     let root = {
 "name:": "Meethra",
