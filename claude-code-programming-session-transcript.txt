@@ -1,0 +1,1877 @@
+[transcript-2025-07-23 11-08-11.md] 
+ 
+[transcript-2025-07-23 11-08-17.md] 
+[00:00:00] Hey folks, now for something a bit different, no exercised or scripted video.
+[00:00:06] We're just gonna do a bit of live coding.
+[00:00:09] So we'll work on some of my projects to get a feel with how I work with it.
+[00:00:15] Now I'm figuring this out as we go, just as you are.
+[00:00:19] So don't take everything I'm seeing with a grain of salt, but it's fun to share how
+[00:00:25] everyone is working.
+[00:00:26] I'm not doing the multi-agents, let them burn tokens thing, but I'm exploring what I do
+[00:00:33] find interesting and boosts my productivity.
+[00:00:37] So yeah, we are working on FSIMCP server, which is a wrapper around the Fsharp interactive
+[00:00:43] window, so that an AI agent can evaluate Fsharp code and I can see it evaluate Fsharp code.
+[00:00:51] So it's a really nice way to collaborate with an LAM agent on Fsharp code and use that
+[00:00:58] wrapper that redevelop print loop together as like two pair programmers.
+[00:01:05] So that's a bit of software I built and it's vibe coded, so it works, but I'm not super
+[00:01:11] happy with the current state of things and if I wanna keep growing this, I want to clean
+[00:01:17] it up a bit.
+[00:01:18] So today we'll be refactoring it, adding some tests, making sure that we can keep growing
+[00:01:24] this code base without shooting ourselves in the foot with all this vibe coding.
+[00:01:30] So what should I do or what do I typically do first?
+[00:01:35] I make a plan and I have learned to, you can make a plan with Claude as like a buddy, a
+[00:01:40] sparring partner, but you have to persist your plans somewhere else than in the current
+[00:01:47] session.
+[00:01:49] Sessions are ephemeral, they should be like running for a couple of minutes, hours, days,
+[00:01:54] don't really matter, but they should be running and then you should be able to throw them
+[00:01:57] out and if your plans are only in the current working session with your LAM or with Claude
+[00:02:02] code or whatever, you lose it.
+[00:02:04] So I like to keep track of my state, like everything that has to live longer than a
+[00:02:09] session when I'm programming, that has to be on disk somewhere.
+[00:02:14] There's other approaches, but for me it's a markdown file.
+[00:02:18] For a lot of people it's becoming like markdown files or any kind of artifacts on disk.
+[00:02:22] So I have this specs folder here, let's create a, or let's first brainstorm with Claude
+[00:02:27] code.
+[00:02:28] I have some rough ideas of what I want to do today and yeah, let's first build a plan.
+[00:02:33] So I started up Claude.
+[00:02:36] So let's ask it to build a plan for our current programming session.
+[00:02:43] Okay, Claude, today we are going to be putting some guardrails in place for this FSIMCP
+[00:02:50] server project.
+[00:02:51] Currently, it has no tests, no smoke tests, no unit tests and the design is kind of stinky.
+[00:03:00] So let's make a plan on how we will improve on this.
+[00:03:07] I am thinking that we put end-to-end smoke tests around this.
+[00:03:12] So that would include piping in input commands through the console and then seeing that it
+[00:03:22] gets output correctly in the console and other things I want to verify is whether or not
+[00:03:28] the MCP integration works.
+[00:03:30] So I'm thinking a quick script that does a little bit of HTTP stuff to talk with the
+[00:03:36] MCP endpoints to verify whether it can send commands and read a FSI output.
+[00:03:44] So let's build a plan together.
+[00:03:50] So I have a rough idea as I mentioned, but I have no clue of how to tackle this.
+[00:03:56] Let's see where we get together.
+[00:04:07] So let's see what we can do.
+[00:04:12] Maybe quick recap.
+[00:04:14] It's an ASP.NET Core API that exposes some MCP endpoints.
+[00:04:20] So AI agents like ClaudeCode can talk to this thing and it wraps the FSI.executable so it
+[00:04:28] can intercept input and output.
+[00:04:32] So we can start emitting that over MCP and accepting commands in MCP and also piping
+[00:04:39] them.
+[00:04:40] One thing that I struggled with a long time is I also want to use that FSI window so I
+[00:04:44] have to be able to work on it and the agent has to be able to work on it in parallel on
+[00:04:48] the same Rappel process.
+[00:04:51] So that was an interesting design thing, but I think I vibe-coded something pretty decent,
+[00:04:57] not production grade, but it's pretty decent.
+[00:04:59] So that's where we're at.
+[00:05:01] Okay, let's take a look at the proposals.
+[00:05:11] Let me zoom in a bit.
+[00:05:13] So yeah, it's stating some random stuff.
+[00:05:17] It's identifying some problems which are correct.
+[00:05:24] Yeah, I like this approach.
+[00:05:25] Like these three things, test the regular use case, test the MCP use case and test the
+[00:05:30] hybrid use case and then do process.
+[00:05:32] I like this.
+[00:05:33] I really like this end-to-end smoke test part.
+[00:05:36] I don't even care about all the rest yet.
+[00:05:41] So let's start with smoke test.
+[00:05:51] Let's not do that entire plan.
+[00:05:53] Let's for now focus on the smoke test part because I really, really like those points.
+[00:05:59] So let's today in this session work on adding smoke tests.
+[00:06:03] I am a backend.net developer so ideally we would be writing X unit tests that run this
+[00:06:10] thing end-to-end.
+[00:06:12] Also it's an ASP.NET Core web API so let's see how far we can get with in-memory web
+[00:06:18] application factory stuff.
+[00:06:24] So I'm providing it with a bit more direction because I'm kind of getting a feeling of where
+[00:06:31] I want to go and I don't want it to randomly generate Python scripts that would work actually
+[00:06:36] but I'm more comfortable with .NET.
+[00:06:40] So yeah, it's going into let's go, gun hoe mode.
+[00:06:43] I'm going to halt it here.
+[00:06:45] I don't want it to go gun hoe.
+[00:06:46] I want it to formulate a plan, save that plan to disk and then we can get started.
+[00:06:54] Yeah, I like this plan so I'm going to ask it to flush the plan to disk.
+[00:07:00] Please write a summary of this plan, of this complete plan into a new markdown file in
+[00:07:06] the specs folder.
+[00:07:11] So whatever happens in 20 minutes if cloud crashes, if anthropic APIs go crazy, we at
+[00:07:16] least have like a compacted human and machine readable version of the plan on disk somewhere.
+[00:07:25] Pro tip.
+[00:07:33] Okay, it's just going to write some text to disk so we'll allow it and then we'll have
+[00:07:38] a look at the specs and maybe we'll improve them ourselves a bit if we're not happy.
+[00:07:44] So there's a smoke testing plan.
+[00:07:45] Let's take a look.
+[00:07:52] Why is this not opening in a markdown preview?
+[00:07:54] Let's, can I do that?
+[00:07:56] Oh yeah, I can.
+[00:07:57] Sorry.
+[00:07:58] It's just me not knowing my IDE preview.
+[00:08:00] There we go.
+[00:08:03] Let me zoom in.
+[00:08:04] How do I zoom in?
+[00:08:06] Okay, there we go.
+[00:08:12] Gaps identified.
+[00:08:14] Smoke this strategy.
+[00:08:19] Yeah, I like this.
+[00:08:33] This is too big of a step.
+[00:08:34] I'm going to do this like bullet point per bullet point or at least the number per number.
+[00:08:38] So I'm going to focus on this console IO thing first or at least spec out one test to make
+[00:08:43] sure that the approach is sound.
+[00:08:45] And then I'm going to do the MCP thing to see whether or not the architecture is okay
+[00:08:51] enough to perform testing and maybe we need to do some operations.
+[00:08:54] So I'm going to go not too deep, but I'm going to go a bit into one of these points to verify
+[00:09:00] whether it will work for that thing.
+[00:09:02] And then we're going to stop.
+[00:09:03] We're not going to dive deeper.
+[00:09:04] We're going to go on to a second thing.
+[00:09:06] We're going to do exactly the same.
+[00:09:09] And if those two things work at the same time, if we can run those two kinds of unit tests
+[00:09:14] or integration tests or regression tests, whatever you want to call it, then I'm pretty
+[00:09:17] sure we can like hit a home run and finish this.
+[00:09:20] So that's my plan.
+[00:09:21] I'm going to focus on number one first.
+[00:09:26] Okay, so how are we going to do this?
+[00:09:29] Now I am going to allow Claude to proceed, but I'm first going to make a quick commit.
+[00:09:36] What I found is a, I usually make small commits, but with coding agents, I make commits even
+[00:09:49] when the build isn't green.
+[00:09:51] That's something I usually would never do.
+[00:09:53] But I like thinking of hit or version control as my global undo button.
+[00:09:59] And these things need a global undo button.
+[00:10:01] So even when it's taking like a big leap and the code is in a state where it's not even
+[00:10:05] compiling, sometimes I commit locally.
+[00:10:07] I don't push this to production, but sometimes I commit just to have that like global restore
+[00:10:13] point.
+[00:10:14] And for me, I work alone in this code base.
+[00:10:17] So for me, as a commit is perfectly fine.
+[00:10:20] I'm not going to even, what's the scientific term?
+[00:10:24] I'm not going to clean up my Git log.
+[00:10:26] It's my work.
+[00:10:27] So I don't even care that sometimes the commits break the builds.
+[00:10:32] But okay, we're digressing here.
+[00:10:33] Let's continue.
+[00:10:35] So I'm going to point it to console IO.
+[00:10:42] Let's start working on the first kind of smoke tests, the console IO smoke tests.
+[00:10:46] Please explain to me in a bullet list how we are going to implement this.
+[00:10:54] So I want to be a bit more concrete about what way we're going.
+[00:10:56] I saw it at unit test projects and X unit.
+[00:10:59] And that's, that's also the avenue I'm considering.
+[00:11:03] But I want to make double, double sure that that's where we are heading.
+[00:11:18] Okay, it's using web publication framework.
+[00:11:20] It's using like the things I know as a dotnet developer.
+[00:11:26] Yeah, that looks exactly how I would do it.
+[00:11:30] Yes.
+[00:11:30] Yes.
+[00:11:31] Yes.
+[00:11:31] Yes.
+[00:11:33] Very good.
+[00:11:35] Very, very good.
+[00:11:38] Okay, I'm seeing a lot of interesting things.
+[00:11:42] I'm going to have it update the plan because these are really good test scenarios.
+[00:11:48] So I'm going to ask you to add the test scenarios to the physical plan.
+[00:11:53] And then we'll get started with the plan itself.
+[00:11:57] Please add these test scenarios to the plan under the first heading because I really like them.
+[00:12:04] I mean the spec file smoke testing plan, MD.
+[00:12:19] Could I hand code this faster?
+[00:12:21] No, the part we're going to do now is like some day.
+[00:12:25] It's like some deep dotnet lore setting up publication factories for testing.
+[00:12:30] Once you have it up and running, it's super fast, super cool for test automation.
+[00:12:34] But like starting on a fresh project or legacy code base, starting this, setting this up.
+[00:12:40] This takes me usually half a day of fidgeting, fiddling around.
+[00:12:44] So I'm really curious how fast we're going to get there.
+[00:12:47] Well, with the help.
+[00:12:49] It added everything, not just the scenarios, but I'll allow it because I kind of liked where it was heading.
+[00:12:59] So even if everything crashes, we can resume just by using that file on disk.
+[00:13:03] Okay, so I'm going to ask it to do the first thing, which is the basic F sharp execution.
+[00:13:10] Let's implement a walking skeleton for this regression test framework.
+[00:13:14] We'll start by the first scenario.
+[00:13:21] So now it's going to go into crazy on programming mode and we're going to let it.
+[00:13:31] So now we're going to go into the first scenario.
+[00:13:33] We're going to let it.
+[00:13:41] Let's commit.
+[00:13:46] Something is happening in the prompt window.
+[00:13:47] Let me get back to that in a second.
+[00:13:51] I noticed that I myself and also Claude, but even I fall into the trap of like pushing on
+[00:13:58] whenever we have a plan and I like have a system prompt in place that says whenever we're going in full code mode.
+[00:14:03] Take a look at the code and refactor it first or provide refactoring.
+[00:14:09] Options and it's saying like, okay, there's tight coupling, there's a violation.
+[00:14:13] And I think it's all true and tight coupling is something we are going to have to deal with potentially even in what we're doing right now.
+[00:14:25] Those are actually some very good points.
+[00:14:27] So already this thing is.
+[00:14:31] Providing me with information that we would have figured out, but we would have figured it out two hours later deep down the rabbit hole.
+[00:14:38] So.
+[00:14:41] Is it making me faster at coding?
+[00:14:43] It can generate a lot of code sure, but it's providing just enough like hints and breadcrumbs for my brain to pick up on saying, oh, shit, we need to take this into account with our plan.
+[00:14:54] So this is what I love is heavily customized cloud code.
+[00:14:57] This my system prompts are like nudging it to do this, but give this a bit of your attention like the system prompt thing.
+[00:15:05] If you make it your version of cloud code, it'll be a brilliant pair programming partner.
+[00:15:11] It'll be still like going too fast in the wrong direction, but it's giving me good stuff right now.
+[00:15:17] So actually I'm going to say.
+[00:15:20] Yeah, that's actually not that bad of an idea.
+[00:15:27] Should we go down this route?
+[00:15:29] Should we first refactor?
+[00:15:34] Or should we first write an end to end test?
+[00:15:40] I'm going to ask you to first write like like I do with legacy code to minimally touch the source code and like provide something.
+[00:15:49] Some seems the Michael Federer's legacy code to book kind of seems some minimal code changes to get this thing under test and then we can start refactoring if you want to.
+[00:16:01] Let's let's not go too deep in refactoring.
+[00:16:04] We're now we're adding characterization tests.
+[00:16:06] So if we have to capture standard in and standard out, that would be okay, but let's not introduce too many abstractions in the code base just yet.
+[00:16:15] And this is why we need programmers.
+[00:16:21] All this five coding is going to cost so much dollars.
+[00:16:25] It wouldn't even be funny, but if you use it like this, I see myself like writing a spec, formulating a plan coming up with it and firing off the agent and coming back a couple of hours later or starting up a new agent or doing some work myself.
+[00:16:40] I see a future like that the fully multi agent swarm thing.
+[00:16:46] I don't see how that will ever make economic sense.
+[00:16:51] I think it's a cool idea, neat concept, but show me the economics show me how that will make economic sense.
+[00:17:00] Sorry, that's a side rent for another time.
+[00:17:02] So it's making a plan.
+[00:17:04] It like a plan within a plan, but let's go and saying create this project implement that.
+[00:17:10] And smoke test implement implement.
+[00:17:12] So it's going too far.
+[00:17:13] I just want those first two things, but let's just have it go.
+[00:17:18] So in my head and making a mental note, this is going too far and we could reprompt ask it to like cuts the plan, but we're going to make a mental note that as soon as we have this basic test up and running that we're good.
+[00:17:33] So it's you adding a unit test projects.
+[00:17:36] It's using fluent assertions.
+[00:17:38] I'm going to ask you to use something else because I'm a fan of another testing framework.
+[00:17:45] That looks good, but do not use fluent assertions.
+[00:17:48] Please use unquote Swanson dot unquote.
+[00:17:54] I think this might have been faster doing this by hand.
+[00:17:58] Like getting a setting of a new project and adding a nugget library.
+[00:18:02] I could do that faster than the LLM probably.
+[00:18:07] Again, because I didn't specify what testing library it should use.
+[00:18:10] So if you have like a walking skeleton of a service design template for a new code base, all this goes away.
+[00:18:17] All this tinkering.
+[00:18:19] It's using end quotes.
+[00:18:22] Yeah, that's the right one.
+[00:18:23] So I'm going to go ahead and meanwhile I'm going to take a look at what the latest version of this library is.
+[00:18:36] Make sure we're running on latest.
+[00:18:38] I don't have any mcp integration to look up documentation or stuff or nugget.
+[00:18:42] So I'm doing this by hand right now.
+[00:18:47] Unquote is at version 701.
+[00:18:50] So I'm going to ask it to or we're going to fix it.
+[00:18:53] So it is 701.
+[00:19:02] So these are all like battle scars.
+[00:19:06] These are things I didn't used to do.
+[00:19:11] You learn you pick up a few tricks once you start working with these coding genies.
+[00:19:18] What's it doing now is creating an actual code now test data with basic expressions, multi line statements.
+[00:19:26] So it's already going too far again.
+[00:19:28] I said like let's focus on the first step, which is this and it's like hammering out all the things.
+[00:19:36] I'm going to ask it to take a smaller step.
+[00:19:40] Let's take a smaller step.
+[00:19:42] Let's focus on sending a single statement like one plus one and then having that evaluate in the FSI shell and then verifying the output through a console capture.
+[00:19:58] I'm really having to nudge this thing into taking a small step.
+[00:20:03] And that's it's like working with another engineer.
+[00:20:07] Most engineers tend to do this.
+[00:20:09] So this is really similar to per progrime.
+[00:20:14] Okay, so now it's going to make a smoke test.
+[00:20:17] What's it doing?
+[00:20:18] It's capturing IO.
+[00:20:26] It's just verifying whether it can capture IO.
+[00:20:29] So it's not running our software just yet.
+[00:20:31] So this is actually a good first step.
+[00:20:37] Note that I'm not putting it in yellow mode.
+[00:20:42] I've learned to be a bit more put my head foot on the brakes a bit more.
+[00:20:49] Yellow mode has its place, but not today.
+[00:21:02] Where is it putting these tests in a test folder?
+[00:21:11] Oh, there.
+[00:21:17] So now it's like already trying to compile the code and saying like, oh, I'm using test data that's not included.
+[00:21:22] So this is the regular AI agent crap.
+[00:21:25] This is where you can let them drive.
+[00:21:28] If you don't mind spending a couple extra tokens.
+[00:21:51] I'm working on my Windows disk again.
+[00:21:54] If you do real work, I suggest you move everything over to WSL if you're running Windows because builds are super slow in this way.
+[00:22:10] Now it's running the tests.
+[00:22:12] Let's take a look at a test time parallel.
+[00:22:16] Oh, yeah, that was a Hello World example.
+[00:22:17] It's not doing anything.
+[00:22:25] Okay, my cloud window is creeping out again.
+[00:22:29] Okay, what's happening?
+[00:22:32] The basic framework is working.
+[00:22:34] Now let's create the walking skeleton to actually start this mcpser and send 1.1 plus one.
+[00:22:42] Before we do, let's actually run this test ourselves.
+[00:22:55] It looks like it hasn't added it to my solution.
+[00:23:00] So you can get a cloud code to do this, but I am tired of prompting.
+[00:23:05] So let's just add.
+[00:23:09] Let's just do it ourselves really quickly.
+[00:23:13] There we go.
+[00:23:14] So now it's an existing or like a project in my solution and now I can build and run it.
+[00:23:25] I notice that I don't have my IDE integration turned on for cloud code.
+[00:23:31] Let's fix that in a second.
+[00:23:41] Okay, let's run these tests.
+[00:23:46] It should be green.
+[00:23:47] Cloud promised me that they were running green.
+[00:23:49] That's also something to kind of double check.
+[00:23:55] Okay, so it's doing something.
+[00:23:57] Let's see this test fail.
+[00:24:03] There we go.
+[00:24:04] Just made the test fail by not breaking the code because there's nothing to test here.
+[00:24:09] It's just like a test that uses only mocks and tests nothing.
+[00:24:15] Yeah, okay.
+[00:24:16] So I saw it fail and I see it pass.
+[00:24:19] So I'm going to commit.
+[00:24:21] Stay the landing point.
+[00:24:24] I don't know why my user file keeps getting added, but let's just commit it for now.
+[00:24:29] Hello world smoke test or let's call it walking skeleton.
+[00:24:37] Oh, I'm pushing.
+[00:24:38] That's okay.
+[00:24:39] It's my code.
+[00:24:45] Okay, so we committed to changes.
+[00:24:48] Let's go back to cloud now and let's have it actually do something interesting with our own code.
+[00:24:53] Not just like writing stupid tests that don't assert anything.
+[00:24:57] Let's take a quick peek.
+[00:25:10] Should it sleep need to sleep?
+[00:25:12] I'm not actually convinced.
+[00:25:14] Is it like a nice thing?
+[00:25:18] That's not really important.
+[00:25:21] Where is it sending commands?
+[00:25:26] Where's it sending commands?
+[00:25:34] Where is it sending the one plus one?
+[00:25:39] Range.
+[00:25:46] Not on this file.
+[00:25:47] It isn't.
+[00:25:48] But okay, let's have it write a test and let's quickly hook up the ID.
+[00:25:55] That way we get better diffs than console based.
+[00:26:02] And you can select like snippets of code and cloud knows which snippets you selected.
+[00:26:06] So it's a bit of a nicer user experience comes closer to the cursor experience.
+[00:26:19] So compilation errors.
+[00:26:21] This is normal.
+[00:26:28] What's it doing?
+[00:26:32] Fixing syntax errors.
+[00:26:34] Sure.
+[00:26:39] I'm going to kill it and I'm going to fix my ID because it's not working.
+[00:26:42] There we go.
+[00:26:43] So now it's hooked up to writer.
+[00:26:45] That is something I really appreciate.
+[00:26:47] You can just kill out of it when it's doing something stupid and take over again or redirect it.
+[00:26:53] Don't be afraid of the escape button.
+[00:27:03] Should stop resizing.
+[00:27:05] Did it hallucinate a server factory?
+[00:27:09] I don't know guys there.
+[00:27:11] I thought it hallucinated like test runners.
+[00:27:21] So it can write a sharp code and it's not a bad idea.
+[00:27:25] It's not a bad idea.
+[00:27:27] It's not a bad idea.
+[00:27:29] It's not a bad idea.
+[00:27:32] So it can write a sharp code.
+[00:27:35] It's pretty good at like the algorithmic stuff like pipeline operators, maps, selects, filters.
+[00:27:41] It's not really good at the thing we're asking it to do now.
+[00:27:44] But I know myself I would spend like a couple of hours on this myself.
+[00:27:48] So I'm willing to let it brute force its way through.
+[00:27:53] Oh, sorry.
+[00:27:54] It's asking me to approve something.
+[00:28:02] No, it's not.
+[00:28:04] Why is it hanging?
+[00:28:20] Let me create a simpler approach.
+[00:28:22] That's always scary.
+[00:28:26] Okay, we're still in the test.
+[00:28:28] So it's not changing production code.
+[00:28:30] That's okay.
+[00:28:34] No, this is not writing an M2 and smoke test.
+[00:28:38] This is grabbing into the internals of the application.
+[00:28:41] And that's what I don't want.
+[00:28:45] No, stick with the web application thing.
+[00:28:48] I don't want like unit tests, testing parts of my code.
+[00:28:52] I want as much as possible end to end characterization test for this piece of code.
+[00:28:59] When things get too difficult,
+[00:29:02] LLM's have the tendency to say,
+[00:29:05] let's do the easy part.
+[00:29:12] I don't know why it would do what I'm seeing.
+[00:29:19] The issue is with a program type reference for F sharp top level programs.
+[00:29:24] That's something I'm not really understanding.
+[00:29:26] So now I'm going to drop,
+[00:29:28] I let it dry for a while.
+[00:29:30] I don't understand what it's doing.
+[00:29:32] And instead of pushing through,
+[00:29:34] I feel uncomfortable.
+[00:29:36] So we're going to hold back and have it explain itself.
+[00:29:46] Please explain the issue more concretely.
+[00:29:49] What do you mean with the program type reference for F sharp top level programs?
+[00:29:54] Please list like the problem and two possible solutions.
+[00:30:01] Always ask it for options.
+[00:30:03] Never have it go have it have it go at a single thing.
+[00:30:10] Let's take a look at our code under test.
+[00:30:12] Why is it struggling?
+[00:30:17] It has a main method.
+[00:30:19] Okay, there's okay.
+[00:30:21] We're going to have to extract the method here.
+[00:30:24] So I would know what to do.
+[00:30:26] I think we're going to have to help it.
+[00:30:28] So let's see if it proposes what I'm thinking should propose.
+[00:30:38] Yeah, so okay, identify the same problem as I did.
+[00:30:45] No, no.
+[00:30:47] Okay, now I'm going to ask it to do a bit of refactoring on the source code.
+[00:30:51] Please, you are allowed to edit the program dot fs.
+[00:30:55] Now, please extract a method.
+[00:30:58] So we have more influence over web application building and the IOC part so we can inject stuff fake stuff in the future.
+[00:31:07] So you are allowed to refactor program dot fs and to extract some methods stuff like that to make this a bit easier.
+[00:31:14] But remember, we are writing and to end or as much end to end as possible characterization tests.
+[00:31:32] If this keeps going for 30 more minutes and we don't have a hello world, then I'm thinking I would be faster off doing it myself.
+[00:31:40] But let's see, we're playing around.
+[00:31:45] So it's proposing changes to the source code.
+[00:31:50] Now is when I have to be really aware and really check what it's doing or it'll break our code.
+[00:31:56] Yeah, configure services.
+[00:31:58] That's something I've seen myself do every time I did this kind of test automation.
+[00:32:02] So this makes a lot of sense.
+[00:32:15] Yeah, I'm actually quite pleased with this.
+[00:32:18] So let's have it give it a go ahead.
+[00:32:20] Sorry for all this flickering.
+[00:32:22] If you know how to solve this flickering console thing, please let me know in the comments below.
+[00:32:28] Let me clean this up.
+[00:32:30] I'm just going to let it go for a while.
+[00:32:32] It's I like constrained the search space.
+[00:32:37] Couldn't have, I think, to let it brute force for a while.
+[00:32:40] So it thinks it's done and now it's building the code, which I kind of appreciate.
+[00:32:46] I'm going to let it go for a while.
+[00:32:48] Search space.
+[00:32:49] Couldn't have, I think, to let it brute force for a while.
+[00:32:53] So it thinks it's done and now it's building the code, which I kind of appreciate.
+[00:32:58] Thinking you're done versus having the app running, which is what we're trying to we're trying to improve this feedback loop,
+[00:33:05] like perform a full test suite on changes.
+[00:33:08] So that's why I'm investing the work.
+[00:33:18] Yeah, this is really familiar.
+[00:33:28] This is how I typically approach test automation questions like this.
+[00:33:34] So let's just let it let's have it steal a bit.
+[00:33:38] I'm really curious if we get to a point where my specs are a little more concrete, a little more clear,
+[00:33:52] or we can like provide a bit better system prompts that encodes more of this implicit knowledge.
+[00:33:59] I'm really curious whether or not we can get this like to an economically viable state where it can work brute force hands off human on top of the loop.
+[00:34:08] So far, I'm still skeptical.
+[00:34:15] It's going it's doom looping right now.
+[00:34:17] It's trying to fix its own shit.
+[00:34:30] Still, if this gets done in an hour, this would have already cost me four times as much time.
+[00:34:42] Still doing silly things.
+[00:34:44] I'm going to put it in auto accept mode next time it's going in the right direction.
+[00:34:49] It's just doom looping a bit.
+[00:34:51] Root forcing a bit.
+[00:34:53] Sure, I'm going to go and put it in auto accept.
+[00:35:12] Still doom looping still having compile errors.
+[00:35:32] No, that was a red screen for me.
+[00:35:34] I don't know why it's thinking like let's go.
+[00:35:37] Okay, it's running the tests now.
+[00:35:48] I'm still not comfortable with like this way time.
+[00:35:53] If you have automated tests in place, you get quicker feedback, but these things still hallucinate still have compilation errors.
+[00:36:00] So they need a couple of brute force iterations.
+[00:36:03] So I'm not sure where or not I can drive the time it takes to do meaningful work down.
+[00:36:09] Or yeah, I'm still on the fence about that.
+[00:36:15] Okay.
+[00:36:23] I'm seeing it now it's going it's it's it's cheating.
+[00:36:27] I saw stuff pass that I would not let pass if a colleague submitted a pull request.
+[00:36:33] So let's see whether or not the test actually works.
+[00:36:40] Okay, it's running a test now.
+[00:36:44] Okay, now now is the trust but verify phase.
+[00:36:49] So I'm going to quit quit.
+[00:36:50] It's going to try the writing other tests.
+[00:36:53] I'm not sure we're done yet with this first test.
+[00:36:56] So let's verify.
+[00:36:59] Let's first build the solution quickly.
+[00:37:09] It's compiling.
+[00:37:10] That's already a win.
+[00:37:12] Let me quickly debug it or started myself to verify that it still works.
+[00:37:20] And again, we're not going to go into details about what I'm building too much.
+[00:37:26] That's for another video.
+[00:37:28] You could take a look at some kid up if you're really interested.
+[00:37:42] Okay, builds does it run?
+[00:37:48] Yeah, it's opening up network things.
+[00:37:50] This is everything I expect.
+[00:37:52] I need to do some enterprisey things just a second.
+[00:38:11] There we go.
+[00:38:24] Okay, sorry for that.
+[00:38:26] Had to enable some things to actually allow it network access.
+[00:38:32] Okay, but now let's see it where it works.
+[00:38:38] Yeah, that looks great.
+[00:38:40] So at least the CLI part is still working.
+[00:38:43] Haven't tested the MCP thing.
+[00:38:45] Oh, you know what actually testing the MCP thing isn't that hard.
+[00:38:49] There we go.
+[00:38:50] Let's quickly verify.
+[00:38:52] This is what I'm trying to get rid of all this manual testing and retesting.
+[00:38:56] So that's why we're programming today.
+[00:38:59] That's the current session.
+[00:39:00] That's what it's all about.
+[00:39:06] Okay, it's already running somewhere.
+[00:39:10] That's interesting.
+[00:39:13] I have nothing else running probably WSL somewhere.
+[00:39:17] Let's not focus too much on that.
+[00:39:19] I'm pretty sure if the backend starts and receives console IO, most of the things work.
+[00:39:26] So, okay, I'm comfortable enough proceeding.
+[00:39:28] Let's now take a look at this test code.
+[00:39:35] So it's sending one plus one to standard IO.
+[00:39:40] We're building an app with an empty array of arguments.
+[00:39:47] Sure.
+[00:39:49] It starts the emphasizes.
+[00:39:52] Don't really like that.
+[00:39:59] It's digging into the internals of my product again, not like it.
+[00:40:04] Okay, it needs it to start it.
+[00:40:08] Why is that?
+[00:40:09] I think create apps should actually do that.
+[00:40:12] I know that's what happens in the main methods.
+[00:40:15] That's something we can fix ourselves in a second, but this has to go.
+[00:40:20] We don't want this in our tests.
+[00:40:23] Oh, we definitely don't want this in our test.
+[00:40:29] Waiting.
+[00:40:30] But for the rest, I'm actually pretty impressed.
+[00:40:34] So let's run this test ourselves.
+[00:40:41] Let's see.
+[00:40:42] We are testing something relevant because this or thing, fuck that.
+[00:40:47] Fuck that shit.
+[00:40:48] It's gone.
+[00:40:49] That was what I was noticing a second ago.
+[00:40:52] It was like making the assertions moot useless.
+[00:40:56] Okay, so.
+[00:41:03] Now you see it's it's lying.
+[00:41:05] It's not we're not as far along as it gave the impression we were.
+[00:41:12] It's like we're nowhere near done.
+[00:41:14] But I think it put all the necessary ingredients in place.
+[00:41:18] So now we can fix it ourselves.
+[00:41:22] I think I think that'll be faster than doom looping.
+[00:41:25] So I like what I'm seeing.
+[00:41:27] I like what I'm seeing.
+[00:41:28] This is where we start to.
+[00:41:30] Yeah, this is where we start to lose control.
+[00:41:34] This is not what we want to do.
+[00:41:50] Can I?
+[00:41:52] How do I send things?
+[00:41:57] What does that in need?
+[00:41:59] Text reader.
+[00:42:10] I'm debating internally debating whether or not to push cloth because I know that's
+[00:42:16] an option or think deeply myself.
+[00:42:20] I put catcher is great.
+[00:42:22] I'm not sure whether or not this is the right moment in time to set the input.
+[00:42:29] I mean, this needs to have started before we can actually do it.
+[00:42:36] So I'm going to do something stupid.
+[00:42:38] I'm going to hijack the input stream later.
+[00:42:43] So as I have started, then we hijacked the input stream.
+[00:42:49] And we're not going to even send this over because we're expecting the input stream to
+[00:42:54] send this over CLI.
+[00:43:01] Is this being executed?
+[00:43:02] Actually, no.
+[00:43:03] So yeah, okay.
+[00:43:04] So it's, it's very far off.
+[00:43:06] It's not even piping the console input to have a sigh in our tests.
+[00:43:12] We're not running the main method.
+[00:43:13] It's running like all the other things.
+[00:43:15] So we have a lot more work.
+[00:43:18] I'm going to push through for 70 minutes more.
+[00:43:24] So it's creating the app that looks somewhat okay.
+[00:43:27] Then it's doing this.
+[00:43:30] I don't want it doing this here.
+[00:43:34] I want to doing this here.
+[00:43:36] So it also happens in our tests.
+[00:43:43] Actually, it can do everything.
+[00:43:50] Yeah, it can do everything.
+[00:43:54] This is where you need to be like still need to be a developer.
+[00:43:59] Yeah, that's all correct.
+[00:44:01] That's all correct.
+[00:44:03] What is this status thing?
+[00:44:08] What does this thing return?
+[00:44:15] What is this thing?
+[00:44:16] Where's status getting coming from?
+[00:44:18] Oh, it's the array.
+[00:44:19] That's useless bullshit again.
+[00:44:22] These things are so fickle.
+[00:44:27] Okay, I see why.
+[00:44:29] Okay.
+[00:44:31] Well, screw it.
+[00:44:33] Okay, this is good enough.
+[00:44:35] This is good enough.
+[00:44:36] I think the app still works.
+[00:44:38] We just refactored some.
+[00:44:40] I think they should go.
+[00:44:42] And I think this should also go because we now do that.
+[00:44:46] We don't care about status.
+[00:44:49] I think this is worth another shot.
+[00:44:52] First, let's run.
+[00:44:55] Oh, our tests are not compiling.
+[00:45:00] There we go.
+[00:45:06] How are we handling cleanup now?
+[00:45:10] Question for next question to solve.
+[00:45:13] We're not focusing on that right now.
+[00:45:15] Okay, so app still starts.
+[00:45:21] Yeah, it's still working.
+[00:45:23] So now let's try running the test again.
+[00:45:41] An operation on a socket could not be performed.
+[00:45:43] Okay, that's better.
+[00:45:47] I think I have some hanging processes somewhere.
+[00:45:52] Not the focus of today's video.
+[00:45:54] I'm going to just cheat a bit and bind to another port.
+[00:46:13] Okay, so now the test is failing again on the assertion.
+[00:46:17] So it's not seeing output.
+[00:46:20] So let's take a look at what it is seeing.
+[00:46:24] It has seen all the output from startup, but it's not seeing anything else.
+[00:46:30] So this is me thinking that probably the input part is not working.
+[00:46:35] Let's debug that.
+[00:46:38] Where's the input thing?
+[00:46:41] Here's the input thing.
+[00:46:43] So this is the piece of code that hijacks the input stream and forwards it to FSI.
+[00:46:47] I'm going to put a break point and I'm going to put a break point on where we configure this.
+[00:46:53] This should be called in a test, right?
+[00:46:56] Create app.
+[00:46:58] Yeah, so let's start debugging.
+[00:47:02] And now we're fully fledged the programming.
+[00:47:05] You could use LLMs to like ask questions at this point, but I'm pretty sure that you won't be able to figure this out
+[00:47:12] or you have to get really lucky.
+[00:47:16] This is where you still need engineering.
+[00:47:23] Okay, I ask it to step into unable to download sources.
+[00:47:30] Okay, we're stepping into the wrong thing here.
+[00:47:34] There we go.
+[00:47:41] We're going to configure app as we're at, right?
+[00:47:43] So, okay, everything is getting called.
+[00:47:46] Sure, sure, sure.
+[00:47:48] Let's proceed.
+[00:47:50] Okay, so it's actually registering the IO hijacker.
+[00:47:56] That's already promising.
+[00:47:59] Okay.
+[00:48:01] And it's executing this task now.
+[00:48:05] This is the part I'm interested about.
+[00:48:09] I'm going to read a line from console.
+[00:48:12] And it's seeing the one plus one interesting.
+[00:48:14] So it's actually capturing output here.
+[00:48:16] Input, sorry.
+[00:48:18] And, but the app has not finished bootstrapping.
+[00:48:21] So I think we found a problem.
+[00:48:23] We're still bootstrapping the app and we're already processing input output.
+[00:48:26] So my initial hunch was correct.
+[00:48:28] Let's go back to the test.
+[00:48:31] We cannot send stuff through the input.
+[00:48:38] How is that even happening?
+[00:48:40] Is it because it's a, I'm firing off an asynchronous task?
+[00:48:45] I think it's because we're firing off an asynchronous task here.
+[00:48:48] So now we're going to dive deep into asynchronous programming,
+[00:48:51] but here I'm firing off some work and letting it execute in the void.
+[00:48:55] We're not even waiting for it.
+[00:48:57] We're going to have to not do that, which is interesting because this was a deliberate design decision on my end.
+[00:49:04] Okay.
+[00:49:10] I'm going to await that task.
+[00:49:16] And actually here is where I could use a little bit of a cloud code magic
+[00:49:20] because I don't know how to do that.
+[00:49:24] Yeah, I'm just going to ask you to help me.
+[00:49:28] So I'm going to select the task.
+[00:49:32] Or the snippet and then we're going to ask it to like, hey, let's figure this out.
+[00:49:36] We're not really, I'm not really super into the idea of continuing that conversation with this.
+[00:49:46] This is like a completely separate question.
+[00:49:48] So I'm going to start a new cloud instance.
+[00:49:52] I'm starting like a Santa's little helper.
+[00:49:56] No, let's do it here then.
+[00:50:12] Let's take a look at program dot fs.
+[00:50:15] Let's take a look at program dot fs line 91 where we do some task dot run magic.
+[00:50:28] How do we rewrite this code so we actually await that task before proceeding?
+[00:50:45] I think now it's going to break the desired behavior of this app.
+[00:51:00] So yeah, I'm still going to go ahead with it.
+[00:51:04] It's a very small change.
+[00:51:06] So it's okay.
+[00:51:16] I would.
+[00:51:20] That's an interesting approach, actually.
+[00:51:28] If the order of those things works out, this might be, it's not a production grade solution, but it's a solution.
+[00:51:40] Okay, so it's saying I'm done.
+[00:51:43] I'm going to do some manual intervention here.
+[00:51:46] So this is okay.
+[00:51:47] I'm going to close out of this one.
+[00:51:48] Don't need it anymore.
+[00:51:50] I kind of like it.
+[00:51:51] I think that it should first like try to first run the console task, but not wait until it's really done before starting the app task.
+[00:51:59] So there's a little bit of a concurrency multi-threading issue here.
+[00:52:05] I don't like it wrapping a app in another task.
+[00:52:09] Yeah, so I have some problems with what I'm seeing, but we're approaching the one hour market.
+[00:52:16] So let's not worry too much.
+[00:52:24] Why is this failing?
+[00:52:26] Okay, because it returns three things now.
+[00:52:33] What is this task again?
+[00:52:34] The console task.
+[00:52:44] Not the cleanest API, but okay.
+[00:52:57] How do I await the task?
+[00:52:59] I'm not sure, but I see that we're running out of time.
+[00:53:06] So I'm just going to brute force my way through this for a while and we'll clean it up later.
+[00:53:11] So now we are actually waiting.
+[00:53:16] We can't actually do that because that breaks execution.
+[00:53:21] So where should we be waiting before we send input?
+[00:53:25] Oh, that is here actually.
+[00:53:47] Yeah, this needs to happen.
+[00:53:48] Our code is well right in our test code.
+[00:53:50] So we run the app and then we run the console task.
+[00:54:04] And then we send the input.
+[00:54:14] And then we run the app, something like that.
+[00:54:17] And not a multi-threading expert here, so don't do what I'm doing.
+[00:54:22] Don't use this code.
+[00:54:24] Okay, let's see how far this gets us.
+[00:54:48] No, so now it's hanging in a doom loop.
+[00:54:53] So this was too optimistic.
+[00:54:55] Now we are blocking.
+[00:54:57] I think what's happening is this thing is in an infinite polling loop.
+[00:55:02] So we're infinitely awaiting this thing.
+[00:55:05] Let's verify that quickly.
+[00:55:07] This is not me like pulling this out of my head.
+[00:55:10] I've seen this happen before while I was working on the vibe coded part.
+[00:55:18] I'm pretty smart, but I'm not.
+[00:55:20] We are near that smart.
+[00:55:26] Okay, so we get to this point and now I'm calling a shot that it'll never proceed.
+[00:55:33] Yeah, that's an interesting design question.
+[00:55:36] So that's something to focus on separately.
+[00:55:41] Let's push on five minutes more.
+[00:55:48] I'm just starting a parallel clots session.
+[00:55:50] Don't want to clutter the context window.
+[00:56:00] Let me grab the file name.
+[00:56:06] There we go.
+[00:56:09] Please take a look at the smoke test in this test file.
+[00:56:23] On the line where we are awaiting the console task, we are in an infinite waiting loop.
+[00:56:29] So please advise on how to start that console task and make sure it's running in our test.
+[00:56:36] Before we start the full app and send input.
+[00:56:39] So please take a look at the test and the API codes.
+[00:56:44] Think deeply.
+[00:56:49] I did a bit of prompt like magic.
+[00:56:51] If you ask these things to think deeply, they often go into something called chain of thought reasoning,
+[00:56:56] where they have like some kind of an internal monologue.
+[00:57:00] So you'll see this light gray thing.
+[00:57:03] This is the chain of thought prompting.
+[00:57:06] It's actually generating like internal thoughts.
+[00:57:13] I'm talking about it like it's like a human like brain.
+[00:57:17] It's not, but that's one way to look at it.
+[00:57:32] Yeah, it has identified the correct problem.
+[00:57:36] Now I'm curious about the fix because that was something I was chewing on myself.
+[00:57:47] Let's see what it's proposing.
+[00:57:53] Here's the fix.
+[00:57:56] So it's firing and forgetting the console task.
+[00:58:05] And then it's firing off the firing of forgetting the app.
+[00:58:09] I don't think that really needs to happen like this.
+[00:58:15] But good enough.
+[00:58:16] I think this might be setting us up for success.
+[00:58:25] It's it often tries to run like a single F sharp or C sharp file for test.
+[00:58:40] I don't know if that's possible, but I've seen this doom loop many, many times before.
+[00:58:45] Maybe I should do something about it in my global system prompt or my my dot net system prompt.
+[00:58:56] Okay, 30 seconds in counting.
+[00:59:01] I don't know if that's actually encouraging.
+[00:59:07] Now I think it's timing out.
+[00:59:09] So I'm going to kill it.
+[00:59:11] I'm not like going to wait five minutes.
+[00:59:15] Did it change?
+[00:59:19] Yeah, so it changed.
+[00:59:21] Let me run this test myself.
+[00:59:31] Maybe let's build first.
+[00:59:38] What's happening with my ID?
+[00:59:46] It's being a bit of a mess.
+[00:59:49] It's being a bit of a slow, slow burn.
+[00:59:53] Okay, there we go.
+[00:59:55] How do I?
+[01:00:00] Can I not run this thing?
+[01:00:02] Okay, it's just building the tests wasn't finished yet.
+[01:00:08] Is there a main method in here?
+[01:00:10] No, why is it complaining about main methods?
+[01:00:13] Okay, something interesting is happening now.
+[01:00:16] It's trying to copy paste DLLs and the process is hanging somewhere.
+[01:00:21] This is something I would like fixed because I don't like hanging web servers.
+[01:00:27] So I'm going to fire this off to my ephemeral cloud session.
+[01:00:43] No, actually, maybe it's hanging in WSL.
+[01:00:54] So it's just going to paste the error message.
+[01:00:57] You can even paste like screenshots.
+[01:01:00] It's crazy powerful at interpreting images.
+[01:01:03] So I'm going to crap that and do that in Windows as well.
+[01:01:07] So let's start a new shell and do that in Windows because I'm not sure where this process is running.
+[01:01:13] Is it inside WSL or inside Windows?
+[01:01:16] I don't have P kill on Windows, of course.
+[01:01:20] I'm not sure where this process is running.
+[01:01:23] I'm not sure where this process is running.
+[01:01:26] I'm not sure where this process is running.
+[01:01:29] I don't have P kill on Windows, of course.
+[01:01:37] It's going to try cleaning and building one more time, I think.
+[01:01:45] If it clean fixes it, I'm willing to not think about this problem further.
+[01:02:00] Now it's trying to take the easy way out again.
+[01:02:04] So I'm going to stop it.
+[01:02:06] I'm going to see whether or not it still breaks.
+[01:02:15] Building a server should work.
+[01:02:17] It's building the tests that's failing.
+[01:02:29] Yeah, probably it'll still break on the same thing.
+[01:02:38] Yeah, it's still breaking.
+[01:02:39] So I'm going to ask to give me the Windows command.
+[01:02:44] Please give me the Windows commands to kill processes.
+[01:02:49] Or this specific process with these specific names.
+[01:02:52] It is the unit test project that is causing the problem.
+[01:02:59] I'm going to call it the second one.
+[01:03:02] It's going to be the third one.
+[01:03:12] Kill all host processes.
+[01:03:14] That's pretty hard core, but...
+[01:03:17] Yeah, sure.
+[01:03:19] Fast kill.
+[01:03:21] So I'm going to kill out of a cloud.
+[01:03:25] I'm going to just take the big broom and kill all the net processes.
+[01:03:31] There we go.
+[01:03:32] So probably now this build will succeed.
+[01:03:36] Probably this killed half of the writer back end as well, so I'm hoping it survives that.
+[01:03:48] The OAT-AZOR collection is here.
+[01:03:50] There's some noise outside.
+[01:03:52] Okay, so now it builds. Let's run the tests.
+[01:04:08] Actually input forwarding started, so it's actually...
+[01:04:16] Doing the input forwarding, but it's still not working.
+[01:04:18] So let's see what's happening.
+[01:04:20] Let's debug.
+[01:04:24] I hope I have my break points in there still.
+[01:04:28] No, I don't. Let's put them there.
+[01:04:32] This one we've seen.
+[01:04:37] Okay, so where are we in the startup phase?
+[01:04:43] Where's my stack trace?
+[01:04:46] External code, five frames. That gives me nothing.
+[01:04:52] But probably we still have the same problem, right?
+[01:04:55] Line, one plus one, so this is okay, but it should not be doing this before the app has started.
+[01:05:06] Oh, it's receiving a second.
+[01:05:08] Okay, it's receiving another line.
+[01:05:10] Okay, now it's doom looping in the while loop.
+[01:05:15] So I think everything works except...
+[01:05:25] Where is... Oh, wait a second. Where am I setting the input?
+[01:05:30] Is it doing the same shit again?
+[01:05:34] I think it's reverted out of what I was trying to achieve.
+[01:05:40] I don't know if this will work, actually, because here we're doing console thingies,
+[01:05:45] hijacking console streams in the production code itself, and then we're hijacking the hijacked streams.
+[01:05:57] Oh, no, we're just doing console realign.
+[01:05:59] This has a chance of succeeding, actually.
+[01:06:24] Still the same problem.
+[01:06:26] Still the same problem.
+[01:06:30] This is more like what I'm used to when I'm setting up characterization tests for legacy code.
+[01:06:36] This is the feeling, not a magical success, but still if this gets fixed in 20 minutes, something like that, that would be... Oh.
+[01:06:50] Okay, we're having a true exception.
+[01:06:52] So we're jumping over the code. I got rid of my breakpoints, of course.
+[01:06:57] So let's break on the console realign, the first one, and let's break on when we actually send stuff over.
+[01:07:04] We're going to send stuff over, and we are not listening.
+[01:07:23] Yeah, okay, okay. Let's put this a bit further down.
+[01:07:33] Even after the app has started, I should be able to do this. Yes, I should be able to do this.
+[01:07:54] Okay, still seeing the same things. Let's debug one more time.
+[01:08:01] So now we are going to write to standard input, but we have not seen the listener trigger yet. So far so good, I would say.
+[01:08:24] Yeah, okay, now we're capturing it. The app has started, or at least that's...
+[01:08:30] The app has not really started. We have to await this.
+[01:08:39] Can we await this?
+[01:08:42] Yeah, I think we can, but let's take a smaller step. Let's just put a thread sleeve in there.
+[01:08:47] I'm sorry, programming gods. We're making all kinds of sense, but I'm going for the make it work, make it write, make it fast approach.
+[01:08:54] So I know what we're doing is not super kosher, super clean, super best practice.
+[01:08:59] Sometimes you get a skirt against best practice to get something working, and then we can dig ourselves out of this terrible hole.
+[01:09:09] And we can even use Claude to dig ourselves back out of this hole.
+[01:09:21] I was actually kind of hoping we would... I'm going to do one experiment.
+[01:09:28] Like what if we wait for 10 seconds? Maybe the server needs to boot up.
+[01:09:36] Where I'm not this tired and talking to you guys or you folks, I would start investigating more and doing the Async await thing more seriously.
+[01:09:49] But I do Async programming in C sharp all day every day, and I do F sharp programming all day every day, but I don't do a lot of Asynchronous F sharp programming.
+[01:09:58] So that's why I'm kind of losing touch of best way forward here.
+[01:10:04] Oh, I am flailing around a bit. Okay, so this is not working. Let's go back into debug mode.
+[01:10:14] Everyone flails sometimes.
+[01:10:18] Or sometimes everyone flails all the time. They're just pretty good at hiding it and being good at some things.
+[01:10:27] Which is also like an interesting thought in the context of AI and where do we leverage AI and where do we learn or keep learning ourselves.
+[01:10:35] But anywho, we have waited three seconds.
+[01:10:40] I hope that the app is off somewhere running. And now we are going to write to IO.
+[01:10:50] Actually, that's something we can verify, right?
+[01:10:57] Where do we start the app? Where do we print like we're done?
+[01:11:07] Oh, we don't. We just await.
+[01:11:10] Okay, never mind. We were debugging over here. So now we're going to see one plus one.
+[01:11:20] I don't know what's happening. Why am I back here?
+[01:11:27] Where are we?
+[01:11:30] Objects. We're too deep. Let's back out a bit.
+[01:11:37] Okay, we're in asynchronous worlds. We're in black magic, a sink await compile world. Okay.
+[01:11:43] So, okay, now we're gonna hijack the input stream.
+[01:11:47] That's all kinds of exceptions. I should be paying attention to probably. Okay, but now it's failing. We're back at where we are.
+[01:12:01] So let's take a smaller step.
+[01:12:17] We're starting the console task outside of the scope. So it's right here.
+[01:12:26] I'm gonna do one more terrible sin, but more sleeps in there.
+[01:12:33] Yeah, so we're starting the console task giving it a second starting the API giving it a second and then
+[01:12:40] We need to even start the API if we have the console task. Yes, we do. Okay, so let's try this.
+[01:12:48] This is going to need some serious cleanup.
+[01:13:09] I have a feeling that we're super close. Claude won't be able to help me. And I need to start thinking about the problem.
+[01:13:28] Yeah, I think we need to be printing out where we are or something like that. Do we have that here?
+[01:13:40] No, no, we're hijacking. I hope we're hijacking. Maybe I can see the output capture. Does it have something already?
+[01:13:48] String builder. Length zero. No, so nothing has been captured yet.
+[01:14:06] I don't know what's happening. It looks like there's two threads running.
+[01:14:11] Now we're in the console tasks and now we are already reading.
+[01:14:25] Okay, that was a threat sleep. So we are reading now we are hijacking IO.
+[01:14:32] Hmm.
+[01:14:39] This might be actually a fun experiment to ask Claude to generate some timing diagrams.
+[01:14:46] So we're pretty good. I'm going to kill the session like the main agent that was doing the program work with us.
+[01:15:01] So I'm going to ask you to update the plan. We could have done this ourselves, but my brain is approaching mush status.
+[01:15:24] And then we'll start investigating this multi-threading problem.
+[01:15:41] I'm not super convinced that it's a multi-threading problem, but...
+[01:15:54] Yeah, okay. So it's done. I'm going to clear out, forget everything we've been doing.
+[01:16:02] And I'm going to ask it like it's a new session to help me troubleshoot what's happening.
+[01:16:07] So let's select the test.
+[01:16:13] And let's ask it.
+[01:16:14] I think we are facing like a concurrency multi-threading problem here.
+[01:16:19] So take a look at the test I selected.
+[01:16:23] And the test is failing because the output does not contain the expected result.
+[01:16:28] It equals two part.
+[01:16:32] And I see that it gets sent and the code is like parsing it.
+[01:16:39] But I think it's receiving the F sharp statement too soon.
+[01:16:44] So please help me troubleshoot this concurrency problem.
+[01:16:48] Think deeply.
+[01:16:57] Where I have to do this without clots, I would be drawing like a concurrency dot.
+[01:17:04] There's like a very good book about it called Rocking Simplicity.
+[01:17:08] Let me pull that up for you.
+[01:17:14] It's a book about programming functionally in JavaScript written by Eric Normand.
+[01:17:19] But it's actually also surprisingly good at explaining how to think about timing issues and concurrency issues.
+[01:17:26] In software, it has like a diagramming notation.
+[01:17:30] So really good reading if you're doing concurrency things.
+[01:17:36] And I'm trying to get like clots to or come up with a solution or help me draw these diagrams to actually a...
+[01:17:44] I don't know what to do with that.
+[01:17:46] I'm trying to get like clots to or come up with a solution or help me draw these diagrams to actually a...
+[01:17:55] Find a problem.
+[01:17:57] I'm gonna already open that ebook to get an example.
+[01:18:08] So yeah, it's Identifier Race Conditions.
+[01:18:10] That's exactly what I want to do.
+[01:18:12] Yeah, so let me quickly show.
+[01:18:14] I'm not gonna show it too long copyright.
+[01:18:16] But these kinds of diagrams like this thread is doing this, this thread is doing this is super helpful if you're debugging race conditions.
+[01:18:24] And the book Grockeng Simplicity covers it very understandably.
+[01:18:37] Recommend polling.
+[01:18:45] Replace the immediate output capture with polling that waits for the expected content.
+[01:18:50] Not sure why that would fix it, but yeah.
+[01:18:55] We're in experiment mode, so I'm just gonna ask it to try.
+[01:19:00] How clean is our git working directory?
+[01:19:03] Not super clean.
+[01:19:07] But we can always back out of these changes, so I'm not too worried.
+[01:19:20] Sure, looks reasonable.
+[01:19:29] Will it figure out?
+[01:19:31] Oh no, there is no compilers.
+[01:19:35] My IDE is just not up to the latest state of the project.
+[01:19:44] Oh no, it's not.
+[01:19:47] Oh no, it's definitely breaking.
+[01:19:52] Need some type hints, sure.
+[01:19:55] I'm curious, like, I only know the C sharp and the F sharp experience, and I see a lot of people say that it's really good at Python.
+[01:20:05] I can't compare, so I'm curious whether or not the Python development experience is better than the .NET development experience.
+[01:20:13] I kind of like having a compiler to catch the really stupid stuff.
+[01:20:19] So yeah, if you have experience with JavaScript or Python and these tools, is your experience similar or is it less frustrating?
+[01:20:29] Let's do looping.
+[01:20:31] I think that is, I don't know, we're seeing potential not awaiting tasks warnings, but it's something else.
+[01:20:44] Okay, I think it came up with relevant points.
+[01:20:54] Well, probably we're going in the right direction.
+[01:21:04] Yeah, yeah, yeah, yeah.
+[01:21:09] No, no, no, no, no, it's cheating again.
+[01:21:13] It's digging straight into my internal modules instead of doing an end-to-end test.
+[01:21:21] We are writing an end-to-end test, no digging into the IOC controller, no digging to get access to the FSI service.
+[01:21:29] We need to be able to test this through console standard in, standard out.
+[01:21:36] I'm being very pedantic about this.
+[01:21:40] Yeah, so I know what it's proposing would work, but then we don't have an end-to-end test anymore and we might not catch whatever shit Clawd comes up with.
+[01:21:50] So I'm really pushing back hard on this.
+[01:21:53] Let's do the easy thing.
+[01:21:57] If we have like one of these tests or like two, three of these tests, that's good enough for me.
+[01:22:02] I don't want to write all my tests like this, but we need this safety net to work comfortably with a Clawd code and other AI agent, agent, helper assistants.
+[01:22:17] You need these guardrails in place.
+[01:22:32] I think now we're hitting like the upper limit of how productive we're going to get with Clawd.
+[01:22:51] So I'm really curious whether or not we can break this cycle in the next coming minutes.
+[01:23:02] What are we trying to do here?
+[01:23:04] Oh, dear Lord, be still my immutable data heart.
+[01:23:13] Yeah, it's doing all kinds of nasty things, things I don't like seeing as a F-sharp developer.
+[01:23:33] Might be hanging in so it's running against the same.
+[01:23:37] No.
+[01:23:41] Fail.
+[01:23:42] Test run failed.
+[01:23:43] Impostor is working.
+[01:23:44] Let me debug this.
+[01:23:45] Okay, now it's going into the typical gun hose, all guns blazing, adding debug statements to try to find it.
+[01:23:54] And sometimes it works.
+[01:23:55] Sometimes it just goes off in the deep end.
+[01:23:59] Like all this threat sleeping stuff.
+[01:24:01] In the end, we won't need it, but like just for now.
+[01:24:07] Oh, that's actually an interesting point.
+[01:24:12] It could have just been the new line characters, not like pressing enter.
+[01:24:16] Holy shit, what is the same?
+[01:24:22] Concurrent queue that simulates console input more what?
+[01:24:29] Oh, that's actually an interesting point.
+[01:24:32] It could have just been the new line characters, not like pressing enter.
+[01:24:38] Concurrent queue that simulates console input more what?
+[01:24:54] FSI shows up correctly.
+[01:24:56] That is true.
+[01:24:57] Console task starts.
+[01:24:58] That's true.
+[01:24:59] Input never gets processed.
+[01:25:01] That is also true.
+[01:25:03] The most robust solution is to create a test friendly console input simulator that mimics real console behavior.
+[01:25:10] Holy shit.
+[01:25:11] I've never had to do this in real life, so I would be very, I'm very skeptical that this is the the way to go.
+[01:25:23] Now I'm calling bullshit.
+[01:25:25] I'm the new line thing triggered me.
+[01:25:34] So I'm going to see if we can get there ourselves.
+[01:26:25] So far, so nothing changed.
+[01:26:44] Yeah, I'm going to call it a day here.
+[01:26:48] We've been working at this for 90 minutes, which is almost as long as I would have taken to do it myself, probably.
+[01:26:54] So I'm going to need a quick coffee break break.
+[01:26:57] Let's see how we continue after that. 
+[transcript-2025-07-23 19-11-41.md] 
+[00:00:00] Okay, so took a break went to for a walk with the dog and I came back and I thought about
+[00:00:07] it the problem we were having with our smoke test.
+[00:00:12] Then I opened up chat GPT and I did some research and we got we got through it.
+[00:00:19] So Claude was like struggling on it and it asked me or he proposed something like a let's
+[00:00:28] put in a queue in between and actually that turned out to be a really great idea.
+[00:00:32] So I'm not going to dive into too much detail but let's quickly go over of what made the
+[00:00:38] doom loop stop.
+[00:00:41] I have split up the console listening is like a queue or a channel that's like an intermediary
+[00:00:49] and I have a console listener that just forwards and then I have a consumer for that queue for
+[00:00:55] a channel that reads stuff from the queue and then I did some magic with a sink await
+[00:01:03] task stuff and now it all works as it did before with the added benefit that I have
+[00:01:09] characterization tests that actually run and don't hang.
+[00:01:14] So that's cool.
+[00:01:16] Now we have a basic characterization test for console I owe now I want to do the other
+[00:01:23] parts of our plan.
+[00:01:24] So let's go to the specs smoke testing plan.
+[00:01:28] I killed everything so there is no active Claude terminal and this is why you need progress
+[00:01:34] and architecture documents and architectural designs on your file system not somewhere in
+[00:01:39] the session with NLN not somewhere in the context window.
+[00:01:44] So yeah let's update the plan.
+[00:01:46] Let's do it ourselves.
+[00:01:57] That's actually true we don't do multi-line error handling but I don't actually care.
+[00:02:01] I want to go for the next step which is the MCP endpoint smoke test.
+[00:02:07] So I'm going to start Claude.
+[00:02:12] I'm going to ask it to read up on our progress here.
+[00:02:25] If my keyboard something's hijacking my standard out.
+[00:02:30] Okay I don't know why I can't hit backspace but it's frustrating as fuck.
+[00:02:43] Let's take a look at my MCP server sorry.
+[00:02:47] Kind of makes sense because we're working on our evasizer but that shouldn't crash Claude
+[00:02:51] right okay.
+[00:02:53] Let's yeah backspace is working again.
+[00:02:59] If you press add you can type in plans files so yes that's the one I want.
+[00:03:08] It'll go probably go off and start formulating stuff which is not what we need.
+[00:03:18] So yeah that's that.
+[00:03:22] We fixed the IO part through CLI so you can mark that off as finished in the plan please.
+[00:03:31] I thought I already did that but let's take a look.
+[00:03:46] Okay there were next steps I glossed over them.
+[00:03:51] Yeah okay.
+[00:03:53] Let's make this a bit bigger.
+[00:04:00] Okay now let's start with the MCP smoke test.
+[00:04:07] Now I want to work on step two the MCP smoke test.
+[00:04:12] So I'm thinking web application host factory in memory server and then sending HTTP requests
+[00:04:20] over sending an F sharp command and then retrieving the output through those two MCP endpoints.
+[00:04:29] So let's scaffold another characterization test.
+[00:04:35] I made myself a mo keto.
+[00:04:49] It's pretty hot here in Belgium.
+[00:04:52] Pretty wet as well but also pretty hot.
+[00:05:14] Still keeping on a tight leash because it's a fresh session and I haven't seen what direction
+[00:05:21] we're going.
+[00:05:39] Let's take a look.
+[00:05:45] I should wire it back up to my IDE so we don't have to look in this command output.
+[00:05:53] Let's take a look.
+[00:05:54] Right right right.
+[00:05:55] Creating a new in memory HTTP client for the in memory server makes sense.
+[00:06:02] Make new tool requests serialize it to JSON.
+[00:06:06] Post it on the I think that's the correct endpoint so I'm actually slightly impressed.
+[00:06:20] That's only half the story so it's posting and verifying that a post works but I want
+[00:06:24] to see this this is actually interesting part.
+[00:06:29] So I'm going to tell it to only keep the first two but first I'm going to hook up my IDE.
+[00:06:38] There we go.
+[00:06:42] Let's smush the two first tests together so that it's a round trip test and forget about
+[00:06:48] all the other tests.
+[00:06:49] So mix the first two tests forget about all the other ones.
+[00:06:55] I don't know why I repeat myself.
+[00:06:58] To be extra sure.
+[00:07:02] Okay, let's look at the diff.
+[00:07:11] We're doing our post.
+[00:07:12] We're doing our retrieve.
+[00:07:14] So I think we can start to loosen the steering wheel.
+[00:07:21] I'm sorry for this.
+[00:07:26] Flickering.
+[00:07:27] Okay, there we go.
+[00:07:33] It gives you time to enjoy your drink so that's a plus.
+[00:07:45] It's beeping.
+[00:07:46] I have to take a look.
+[00:07:57] Why is it beeping?
+[00:07:58] Where are we?
+[00:07:59] Create a single round trip test that combines.
+[00:08:04] It's not even compiling.
+[00:08:11] Let's compile ourselves.
+[00:08:13] Actually I kind of not so gently urged it to always build the code after making changes
+[00:08:20] which it's not doing.
+[00:08:22] Interesting.
+[00:08:23] And we have exceptions everywhere so let's take a quick look whether or not we want to
+[00:08:28] do it ourselves.
+[00:08:40] We want to do it ourselves.
+[00:08:42] It's an easy fix.
+[00:08:43] This is spinning up the entire thing.
+[00:08:48] If we talk HTTP it's okay but if we also want to see the console like the next category
+[00:08:54] of smoke tests that's going to be spicy but I think HTTP wise I'm willing to run this
+[00:09:00] test.
+[00:09:09] Let's take a look at what we're actually sending over.
+[00:09:13] Let's round trip test.
+[00:09:15] So we're sending a simple addition or a statement and we are then checking that it's...
+[00:09:25] What the hell is this code response thing?
+[00:09:31] Let's take a look at our endpoint.
+[00:09:32] I don't think that's super correct.
+[00:09:37] It's an MCP tool.
+[00:09:38] It's in here.
+[00:09:39] What do we do?
+[00:09:40] Okay results.
+[00:09:41] Okay what do we actually return?
+[00:09:47] This is our input code.
+[00:09:49] So it's not returning the code.
+[00:09:51] This is bullshit.
+[00:09:54] Fuck you.
+[00:09:55] No I'm sorry.
+[00:09:57] So this is total bullshit.
+[00:09:59] This has to go.
+[00:10:05] This is what we're actually verifying.
+[00:10:08] Sometimes you really have to stay awake.
+[00:10:11] Vibe coding.
+[00:10:13] Yeah.
+[00:10:14] Okay, okay, okay.
+[00:10:15] So we serialize posts.
+[00:10:19] We get the response and should it contain round trip test agent and API?
+[00:10:24] I don't give a shit.
+[00:10:25] I want to see this actually.
+[00:10:28] So let's see whether or not this test already runs green and then we'll fix the assertions
+[00:10:34] ourselves.
+[00:10:39] So it's good for like boilerplatey stuff.
+[00:10:42] If I have to figure out all these async, chase and serializer things myself, I like starting
+[00:10:48] from a great pay or like a sketched in paper.
+[00:10:53] That's easier.
+[00:10:54] What is throwing this?
+[00:11:11] Testing dot web application factory.
+[00:11:12] Okay so it's a testing only thing.
+[00:11:16] It's looking for dependencies.chason file.
+[00:11:23] Every preserved compilation context is set to true on your project file.
+[00:11:30] Okay, I see this.
+[00:11:41] So let's try that.
+[00:11:43] That needs to go in the server.
+[00:11:49] Not 100% sure so we might have to do a bit of research.
+[00:11:56] I've never had to do this for a ASP net integration test so that's interesting.
+[00:12:06] Okay, so that did not fix it.
+[00:12:22] I'm going to have Claude help me out here.
+[00:12:40] So I'm hoping the tests fail for Claude as well and then we can start working on this
+[00:12:45] thing.
+[00:12:46] Do I have that problem somewhere still?
+[00:12:56] Maybe we can do a parallel Google search.
+[00:13:08] What just happened?
+[00:13:09] Why did all the tests disappear?
+[00:13:14] Let's see whether or not we find something.
+[00:13:28] This is very similar to what we're doing.
+[00:13:41] So this is actually literally our problem.
+[00:13:48] Interesting.
+[00:13:54] Okay, so that actually might be our problem here.
+[00:14:01] So let's take a look at our tests and let's see where we bootstrap our web application
+[00:14:08] factory thingy.
+[00:14:11] What program is this?
+[00:14:21] Yeah, it's the actual problem.
+[00:14:34] So Stack Overflow beat Claude this time.
+[00:14:41] So we kind of need this bad boy which is in module program.
+[00:14:54] It's not imported.
+[00:15:08] It's all...
+[00:15:09] I don't have a class.
+[00:15:11] I don't have a program type.
+[00:15:12] It's a module.
+[00:15:17] Can I use web application factory if I don't have a type?
+[00:15:28] If I have like a minimal API inline top level stuff?
+[00:15:34] So I'm going to shut Claude down.
+[00:15:38] I don't think Claude will help me here.
+[00:15:49] I have a main method.
+[00:15:53] What is this doing compilation wise?
+[00:16:03] What does the entry point need?
+[00:16:08] Does it have like generic constraints?
+[00:16:10] I don't see any.
+[00:16:13] Interesting.
+[00:16:16] So this is not a lot of AI assisted but it's coding.
+[00:16:21] Now it just has to be a class.
+[00:16:22] It has to be a class.
+[00:16:25] Okay, so I'm going to ask Claude to make a class for this.
+[00:16:31] The problem was that the program type I'm referencing in the web application host factory
+[00:16:36] was not my program because that's a module not a class.
+[00:16:40] So please take a look at program.fs and rework it so I have a class so I can provide it as
+[00:16:47] a type argument to the web application host factory in my test.
+[00:16:53] Or something like that.
+[00:16:55] All direction.
+[00:16:58] Yeah, no.
+[00:17:12] I'm not convinced that an empty class will solve the problem.
+[00:17:22] I think we need to rework the program.fs module so that I have a .NET class that can
+[00:17:30] be used with all the shenanigans and bootstrapping contained in it.
+[00:17:37] If it's not true, I would like to know.
+[00:17:39] So think deeply.
+[00:17:42] Again, trying to nudge into some chain of thought prompting here.
+[00:18:00] You can never be sure whether or not it's like just repeating what you're saying or
+[00:18:08] whether or not or if it's really true.
+[00:18:10] This is what I expected, like a program type, a class, and then we have those typical .NET
+[00:18:17] members.
+[00:18:18] So I'm going to give it a go.
+[00:18:33] Let's get our hands off the steering wheel.
+[00:18:35] Now it's time for Claude to do his work.
+[00:18:42] We're going to build and test.
+[00:18:53] Let's take a look at the diff in the meantime.
+[00:18:59] I can't stand this flickering.
+[00:19:01] And suddenly when I'm streaming, so I don't really know what I'm doing wrong here or what's
+[00:19:32] still a create app that is doing non-trivial things.
+[00:19:39] And the whole input-output thing is not moved.
+[00:19:41] No, no, no.
+[00:19:43] Claude is like a teenager.
+[00:19:50] It's like doing things that go in the right direction but not actually doing the right
+[00:20:01] things.
+[00:20:02] So I would be very surprised.
+[00:20:05] Or maybe the HTTP part, maybe it's lucky and for the HTTP part this actually works.
+[00:20:09] So I kind of rest my case.
+[00:20:11] It's the coding genie at work.
+[00:20:13] It'll technically work but it's not what I want at all.
+[00:20:29] Let me grab one of my previous projects where I actually did this.
+[00:20:36] I have some reference to compare this with.
+[00:20:46] Yeah sure, this one is okay.
+[00:20:52] We're looking for the bootstrap or program.ms.
+[00:20:55] There we go.
+[00:20:58] Let's see where we bootstrap.
+[00:20:59] So these are recognizable things.
+[00:21:03] Configure services, configure app.
+[00:21:04] That's everything we're seeing here.
+[00:21:07] Here I'm using giraffe, not even suave.
+[00:21:10] But principles are the same.
+[00:21:13] Yeah so this is what I'm just looking for.
+[00:21:19] Okay so I still have a main method in here.
+[00:21:24] I do a configure webhost default.
+[00:21:30] That configure webhost defaults thing calls configure and that does configure app and
+[00:21:39] configure services.
+[00:21:40] So something like this would actually work in our case as well.
+[00:22:01] Okay so it's booting and the test is failing because mcp calls are not working.
+[00:22:07] We could look for a nugget package that has mcp client functionality that might actually
+[00:22:17] be more future proof than what we're doing.
+[00:22:21] So let's pause here for a second.
+[00:22:24] Let's check what's going on.
+[00:22:27] Let's run this test ourselves.
+[00:22:45] Builds are already slow as heck.
+[00:23:02] It's 200 lines of code, not even.
+[00:23:06] It takes 20 seconds to build this code base.
+[00:23:08] I thought that net was fast.
+[00:23:10] What's happening?
+[00:23:19] Okay I know what's happening.
+[00:23:21] So it's failing because the route is incorrect.
+[00:23:27] So this one is incorrect and I think I know what the problem is actually.
+[00:23:33] When I was playing around with it myself yesterday I think this was the correct route.
+[00:23:49] Now it's still breaking on 34 which is...
+[00:23:51] Okay let's do it differently.
+[00:23:53] Let's boot our app in debug mode and let's call mcp and spectra on it.
+[00:23:59] That's like a little node application that you can use to debug your mcp servers which
+[00:24:07] is exactly what we're doing here.
+[00:24:13] It kind of makes sense to grab for it.
+[00:24:14] Why is my app not running?
+[00:24:17] Okay that's better.
+[00:24:22] Let's start the mcp inspector.
+[00:24:32] It's a model context protocol slash inspector.
+[00:24:35] It's a node package sorry, npm.
+[00:24:47] Doesn't look like the app wants to start actually.
+[00:24:50] Let's maybe fix that first.
+[00:24:52] Oh shit.
+[00:24:55] So clod has broken the app again is my guess.
+[00:25:06] Let's take a look at the main.
+[00:25:18] I would expect that it works end to end but that it would horribly fail in tests because
+[00:25:25] all of this is not happening in our tests right?
+[00:25:30] How is our smoke test working?
+[00:25:38] Why is it not running?
+[00:25:46] What's going on here?
+[00:25:53] Now it's just crashing out silently.
+[00:26:01] That is a shame.
+[00:26:03] Let's debug quickly.
+[00:26:12] Sorry.
+[00:26:18] It's not even.
+[00:26:20] It's not even.
+[00:26:22] Let's see if we enter one of these black magic reflection based methods that get called.
+[00:26:40] Okay let's debug.
+[00:26:43] We should hit something right?
+[00:26:47] No?
+[00:26:49] The fuck?
+[00:27:01] We should definitely be hitting this.
+[00:27:05] What's going on?
+[00:27:12] Start the thread and then we get like a silent sqv.
+[00:27:17] Let me break all exceptions to make sure that we see when things explode.
+[00:27:26] It's always, every time I grab for clod code, it's always stuff like this.
+[00:27:34] When I do it myself, it's also always stuff like this but at least I expect it.
+[00:27:38] Now I kind of often expect this to work better than it actually does.
+[00:27:45] Yeah okay, so this is useless.
+[00:27:59] Program finished with exit code zero.
+[00:28:02] How in the what now?
+[00:28:04] Oh shit.
+[00:28:06] I'm running my tests, not my end point.
+[00:28:09] This one's on me.
+[00:28:13] Cloud would not have made that mistake so this is a very big one on me.
+[00:28:19] There we go.
+[00:28:20] Still some break points.
+[00:28:25] Okay but now at least my app is getting bootstrapped.
+[00:28:30] That was silly.
+[00:28:31] Okay so we are up and running.
+[00:28:37] And the app is working.
+[00:28:39] So now this is our next concern.
+[00:28:42] Why is it saying proxy port is in use?
+[00:28:46] Let's ask Cloud how to kill that.
+[00:28:55] On Windows how do I kill processes listening to a specific port?
+[00:29:12] We might need admin for this.
+[00:29:14] Let me preemptively admin it up.
+[00:29:31] Using netstat and taskkill.
+[00:29:34] Fuck it let's go.
+[00:29:35] I've done that before.
+[00:30:05] So let's kill both things.
+[00:30:18] Holy shit.
+[00:30:20] Copy pasting executes it.
+[00:30:25] We need to kill three, five, four, eight.
+[00:30:32] There we go.
+[00:30:34] And the next one is the...
+[00:30:36] Oh no I got rid of my local terminal.
+[00:30:55] Our shell is so damn slow.
+[00:31:14] 6274 is also a problem.
+[00:31:22] That's 6048.
+[00:31:32] Now we should have more success, more luck.
+[00:31:38] So it's called AI assisted coding.
+[00:31:40] There's a lot of coding going on or at least engineering problems.
+[00:31:45] So this is MCP inspector.
+[00:31:47] It's a web UI that allows you to debug your MCP server implementation.
+[00:31:52] As you can see it's going to this URL.
+[00:31:55] It's using the server sent events transport.
+[00:31:58] It's running over HTTP.
+[00:31:59] Let's see if it works.
+[00:32:01] So it works.
+[00:32:04] We can test it here.
+[00:32:10] Let's send a string over to evaluate.
+[00:32:14] And let's get the last 10 events back so we should see that it's evaluated.
+[00:32:20] Yeah, it's being evaluated.
+[00:32:22] So that all works.
+[00:32:24] Now how do I find which HTTP calls are being sent over the wire?
+[00:32:32] Should I actually see that in my console here?
+[00:32:35] Is it actually sending network?
+[00:32:45] Not really.
+[00:32:48] Oh it is.
+[00:32:49] Interesting.
+[00:32:50] So it's posting.
+[00:32:51] Yeah, it's posting.
+[00:32:52] What's the payload?
+[00:32:53] JSONRPC parents.
+[00:32:58] Let's copy this as a curl.
+[00:33:00] I think if we copy this as a curl.
+[00:33:04] Cloud could be able to figure out what we have to do here.
+[00:33:21] So for these kinds of things I see the curl call succeed and now I have to figure out
+[00:33:26] how to execute it in .NET.
+[00:33:29] For these kinds of scenarios Cloud is actually pretty cool.
+[00:33:34] Pretty amazing even.
+[00:33:35] And again a nugget package, an mcp client package would probably make this easier and
+[00:33:40] that's probably something we should be taking a look at.
+[00:33:43] Let's see if that exists. 
+[transcript-2025-07-24 09-26-58.md] 
+[00:00:00] Okay, I'm picking word backup.
+[00:00:04] The MCP client stuff, I decided to do myself
+[00:00:09] because Claude was being a little noob about it.
+[00:00:13] So what I did is I used an MCP client,
+[00:00:16] part of the Model Context Protocol nugget
+[00:00:18] and I wrote that smoke test myself.
+[00:00:22] And now I'm working with Claude again
+[00:00:23] to do like the hybrid scenarios.
+[00:00:25] MCP in, console out, other direction console in,
+[00:00:28] MCP out to verify whether all interaction modes
+[00:00:31] work as expected.
+[00:00:33] So right now I asked Claude to take a look
+[00:00:37] at like those two isolated smoke tests, CLI only
+[00:00:40] and MCP only, smooshed them together
+[00:00:42] into one of those hybrid scenarios.
+[00:00:45] And it did a pretty good job.
+[00:00:46] I actually didn't have to do much to tweak it.
+[00:00:50] So yeah, that's where we're at and let's continue work.
+[00:00:54] So as you can see, it generated the new smoke test,
+[00:00:57] the hybrid one, and that looks really similar to the,
+[00:01:02] yeah, the two isolated smoke tests I wrote.
+[00:01:04] So I am almost happy.
+[00:01:07] I just want like the other direction, the hybrid.
+[00:01:10] I do something in the CLI and MCP can see it.
+[00:01:13] That's done, I think we have enough smoke tests
+[00:01:15] and we have card rails in place to like,
+[00:01:17] let Claude go ham on this code base.
+[00:01:21] So let me verify quickly one more time.
+[00:01:28] The tests are flickering a bit.
+[00:01:30] We'll have to troubleshoot that.
+[00:01:32] There's a lot of asynchronous stuff and like,
+[00:01:35] fsi.exe is doing stuff asynchronously
+[00:01:38] and we are pulling it.
+[00:01:40] So it's sometimes flickers.
+[00:01:42] We need to fix that of course.
+[00:01:44] But right now I want to have like a broad net of,
+[00:01:48] I want to have a broad net in place.
+[00:01:50] And I see that.
+[00:01:50] I'm not sure if I'm going to be able to do that.
+[00:01:52] I'm not sure if I'm going to be able to do that.
+[00:01:55] I want to have a broad net in place.
+[00:01:56] And I see that my computer is doing a lot of things.
+[00:02:01] I think I have a lot of dead processes.
+[00:02:03] A lot of dead.net backends,
+[00:02:06] which are impacting performance.
+[00:02:07] So let me troubleshoot check.
+[00:02:10] Holy shit, we have a lot of,
+[00:02:15] what is eating up this computer?
+[00:02:22] Actually it's just right, really.
+[00:02:26] Yeah, it's just Ryder being a resource hog.
+[00:02:30] Let's kill Ryder.
+[00:02:32] So I'm going to commit this.
+[00:02:34] It's good enough.
+[00:02:35] Hybrid smoke test.
+[00:02:41] And let's then quickly free up some resources.
+[00:02:44] I think I might have some memory leak,
+[00:02:46] leaking some kind of in-memory ASP net server.
+[00:02:50] So there's lots of things to fix.
+[00:02:52] Lots of things you have to think about
+[00:02:54] while you're working with these tools,
+[00:02:56] because Claude won't tell you.
+[00:03:06] My dog is sleeping in the same room.
+[00:03:08] So if you hear weird snoring noises,
+[00:03:12] VMM, what is that?
+[00:03:14] Is that like Docker page file?
+[00:03:21] A virtual process that's the system synthesizes
+[00:03:23] to represent memory and CPU resources consumed
+[00:03:25] by your virtual machines.
+[00:03:27] That would be WSL probably.
+[00:03:31] Let's restart WSL.
+[00:03:38] That's the one thing I don't like about Claude,
+[00:03:39] needing to go through WSL.
+[00:03:45] That alone makes this like a barrier to entry
+[00:03:49] for like a lot of colleagues I work with
+[00:03:52] that use Windows.
+[00:03:56] Okay.
+[00:03:58] Mirrored network remote is not supported.
+[00:04:01] What in the fuck?
+[00:04:08] Really, am I using an old Windows version
+[00:04:10] that does not support?
+[00:04:11] That might explain a lot why I'm having like
+[00:04:13] networking issues up the way, zoo.
+[00:04:17] Yeah, let me check that first.
+[00:04:22] Am I not using Windows 11?
+[00:04:27] How do I check my Windows version?
+[00:04:35] Oh my God.
+[00:04:37] Windows 10.
+[00:04:38] Okay, so that explains why I'm having this much trouble
+[00:04:41] with networking.
+[00:04:42] So I might be in the unique position
+[00:04:45] of fighting with this shit.
+[00:04:48] Anyway, we restart WSL.
+[00:04:49] So I think my performance issues should have been fixed.
+[00:04:57] Yeah, the only thing I don't know is if that
+[00:04:59] VMM thing is supposed to be this high.
+[00:05:04] Excuse me.
+[00:05:06] Oh yeah, that's not the correct solution name.
+[00:05:18] Let me clean up a bit here.
+[00:05:20] Sure.
+[00:05:21] Let's go find our latest version of the code.
+[00:05:30] Hello there.
+[00:05:35] Let's open it up this way to make sure we have the right,
+[00:05:39] the latest version of writer running.
+[00:05:44] Yeah, Windows development, it ain't all shits and gills.
+[00:05:48] Right now at work, I'm struggling with like writer
+[00:05:51] as a new version, but none of the plugins work
+[00:05:54] with the new version for like Azure development,
+[00:05:56] stuff like that.
+[00:05:59] There is no good solution for that net development today.
+[00:06:04] Holy shit, what is hugging up my computer resources
+[00:06:07] like this?
+[00:06:09] My OBS stream is like, even my Spotify is saying,
+[00:06:14] I'm gonna do something about that first.
+[00:06:17] Let's go for a full reboot. 
+[transcript-2025-07-24 09-39-52.md] 
+[00:00:00] Okay, so we're picking work back up. I did the MCP server myself. I was
+[00:00:06] struggling too much with clon so I gave up ProTiv. Don't push through that. Do
+[00:00:11] some research and learning yourself. So what I ended up doing was using the
+[00:00:16] Nugget package, an MCP client as I was seeing, and that actually worked really
+[00:00:21] well. So now I have like basic smoke tests, console IO and MCP HTTP ones and
+[00:00:28] now I want to write the hybrid ones where I do MCP input, CLI output and our
+[00:00:34] way around CLI input, MCP output and I am asking Claude to do that and actually
+[00:00:39] based on those two existing tests it was able to one-shot the hybrid, one of the
+[00:00:45] hybrid scenarios. So that's where we are right now. The hybrid one is sending
+[00:00:52] F sharp code over MCP and then verifying that it gets evaluated and the output is
+[00:00:58] visible in the CLI in the output. So I'm quickly running my tests because I had
+[00:01:07] to reboot my PC. Something was plugging up the works and there's a problem with
+[00:01:13] the tests. It's like multi-threading issues. We'll fix that in a second or in a
+[00:01:18] later session. This is interesting. All those tests were green before I rebooted
+[00:01:24] my machine. Let's take a quick look before we proceed.
+[00:01:35] What could be probable causes?
+[00:01:40] Let's see here. So what is going wrong? We are deep in the smoke test. We are
+[00:01:54] verifying... oh it's the roundtrip. So we're verifying that the evaluation of
+[00:01:59] some F sharp code sent over MCP gets written to console and it appears that
+[00:02:05] it's not. We see the input command getting piped. So we're receiving the input
+[00:02:14] command but we don't see the evaluation results. So I'm guessing FSI is not fast
+[00:02:25] enough. So let me increase this thread sleep. We'll work on this async sleep
+[00:02:30] thing. I'm not a fan of it. I sometimes grab for it in these end-to-end tests but
+[00:02:36] they make your test suite like a factor of 100 times slower. Sometimes you need to
+[00:02:41] if there's no other way. You need to do some polling but we could do smarter
+[00:02:44] things than just waiting 10 seconds. We could do like an exponential backup kind
+[00:02:48] of thing. But that's all optimizations. First I want to have a non-flickering
+[00:02:52] green test suite and then we'll do some optimizations. And that's actually where
+[00:02:56] Claude code is a game changer. Me having to write those things is like very
+[00:03:03] error-prone and Claude is pretty good at doing dumps, dump the tricky shit like
+[00:03:08] that. Okay so every test individually is running green. That is good enough for now.
+[00:03:16] However this is already bugging me so maybe we'll do a micro step and we'll
+[00:03:21] ask it to implement exponential backup here. Yeah so let's show that. That's
+[00:03:27] actually a fun little exercise. So let's boot up Claude.
+[00:03:44] This is booting a PowerShell which will start a WSL session which will boot up
+[00:03:49] Claude. Software development is such a turtle game. Like people breaking into
+[00:03:57] the industry? Holy shit. In my time I used to know nothing. I didn't even know
+[00:04:02] JavaScript. I'd never seen a builder deployment pipeline. Like nowadays
+[00:04:08] you're expected to know so much more. It's crazy. Hey Claude let's take a look
+[00:04:17] at the smoketest.fs file more specifically line 214. There I'm doing a
+[00:04:23] thread sleep for 10 seconds and let's implement an exponential backup. So
+[00:04:28] let's pull for the console output and do an exponential backup with a total of
+[00:04:34] let's say 10 seconds. So my hunch is that this will get one shot.
+[00:04:45] I gave it no context. It just has like the Claude MD file which is the basic
+[00:04:51] design and intent of this app. For the rest it just looks at this smoketest file.
+[00:04:58] Yeah and I'm guessing it'll one shot it. The other things we're doing it's not
+[00:05:05] one-shotting it by far. But this part I feel pretty confident. Yeah there we go.
+[00:05:12] That looks I don't like the mutable mutable thing but I am willing to give it a pass.
+[00:05:22] While not found how is it calculating this found if predicate? It's actually pretty smart.
+[00:05:28] Except for a mutable part I would have written this myself.
+[00:05:34] Yeah so let's allow it.
+[00:05:42] I'm still holding its hands. I'm not letting go of the steering wheel.
+[00:06:04] Okay now it decides to build. Sometimes it decides to build. Sometimes it shows like okay done.
+[00:06:10] I've like nudged it really hard in my system prompt to have it build and verify the tests every time.
+[00:06:18] So these things are like puppies really.
+[00:06:30] But if this is done I don't like the smoketest code. It's like duplication all over the place but
+[00:06:36] I'm willing to squint a bit for smoke tests.
+[00:06:44] Of course syntax errors up the wazoo.
+[00:06:49] There's so many red lines I think it just like indented something wrong.
+[00:06:56] Although Ryder is often out of sync. If Claude builds from command line Ryder gets lost.
+[00:07:04] Yeah let's just push on forward a little bit.
+[00:07:08] And if we haven't figured this out in let's say two minutes we'll take over.
+[00:07:16] I'm giving it one more brute force attempt.
+[00:07:30] Yeah I'm not a big fan of this. It's mixing my assertion thing with back off. But okay I get why it's...
+[00:07:40] I get why it's not easy.
+[00:07:52] Okay now it's running the tests or that one test at least.
+[00:07:59] Okay so it takes five seconds and we have an exponential back off. We can reuse in all our tests
+[00:08:14] which is pretty sweet.
+[00:08:19] I'm going to ask it to fix all tests. That's something it should be able to do.
+[00:08:25] I'm going to build the code myself so I get rid of all these compilation errors in my eyes are bleeding.
+[00:08:34] Where did it define this function actually?
+[00:08:44] It's in the hybrids. Let's rip it out and let's put it in some kind of utility module.
+[00:08:54] Utilities. Wow.
+[00:09:11] There we go so we're extracting the function here.
+[00:09:16] Let's replace the original one.
+[00:09:20] This is way faster if I do this myself.
+[00:09:24] If you... yeah there we go. Don't delegate all work to AI or LLM agents.
+[00:09:34] You'll waste a lot of energy and a lot of time and a lot of frustration.
+[00:09:39] So that's okay. I'm going to ask it to replace every assert with a delay with this polling thing.
+[00:09:54] I refactored the code a bit. We'll put that polling method in a utilities module.
+[00:10:00] Now please take a look at all the other tests in the smoketests.fs file and replace like a
+[00:10:07] thread sleep or a task delay followed by an assertion with this exponential back off.
+[00:10:16] So again I could do this myself and it would take a couple of minutes but these are things I
+[00:10:24] started with to trust myself like it's okay to delegate and fix up the mess if it makes a mess.
+[00:10:30] But this is like the tedious repetitive work that I'm feeling comfortable to delegate.
+[00:10:37] Even for like pretty complex stuff like what we're doing here and when I'm building a web API
+[00:10:44] or something easy no disrespect but something that's like out there and there's one million
+[00:10:51] blog posts about it. I tend to let go of the steering wheel more but for these things Claude is
+[00:10:58] just too eager and too stupid to actually drive by itself. So I'm going to let go of the hand holding
+[00:11:06] and having it brute force its way through. I'm taking a look at the time again 11 minutes in so if
+[00:11:16] we're at 15 minutes in so I'm getting it four minutes if it's still doom looping we will be taking over.
+[00:11:27] My dog has just woken up. Tango.
+[00:11:33] Everyone. I think he needs to go potty. So let's see whether or not we can fix this thing and then
+[00:11:41] take a quick break.
+[00:11:46] Good boy.
+[00:11:53] Okay we're at the first built doom loop.
+[00:12:03] Compiles running the tests let me zoom in a bit.
+[00:12:11] That's not really that much zoom. More zoom.
+[00:12:22] There we go.
+[00:12:34] I see stack traces that's not a good sign. So that's doom loop one. It's failing
+[00:12:40] and run time.
+[00:12:45] Holy shit it's pulling in some kind of asynchronous stuff which it's pretty bad at so.
+[00:12:57] Okay so it's making the some async code run synchronously. Not sure what I feel about that.
+[00:13:05] If this was like a pair program with partner we would stop and discuss so maybe that's what we
+[00:13:10] should be doing now. I'm going to give it one more doom loop and then we'll stop and discuss.
+[00:13:20] Now it's just like okay let's run one test.
+[00:13:26] It always gives up like okay let's do the easy thing. Okay.
+[00:13:30] Ah that looked better. I was seeing CLI output.
+[00:13:39] Just run all tests. Jesus Christ.
+[00:14:00] Okay we're doing a full run of this suite.
+[00:14:30] It's red but it's normal. I don't know why it's flagging it as an error output.
+[00:14:41] Okay there is an error. Yeah yeah okay I know. I knew that we cannot run these tests in parallel.
+[00:14:49] So let's run them ourselves.
+[00:14:52] That's the next thing we should opt to fix actually but it's a difficult thing so
+[00:14:57] we're gonna have to do it ourselves.
+[00:15:01] I was actually pretty impressed yesterday when I asked about the race conditions.
+[00:15:06] Claude was fucking up but when I asked chat GPT like the what is it the O3?
+[00:15:12] The internal reasoning model. It's I just gave it like the context and my question gave it 10
+[00:15:19] minutes to think and it came up with the solution or a solution at least so that is pretty
+[00:15:27] cool. Okay so we can compiler code at least. Now let's run these tests one by one.
+[00:15:40] Console still working. The hard part the hybrid one.
+[00:15:48] Working purely mcp1.
+[00:15:51] Yeah so everything is working or at least every test individually is working.
+[00:16:00] So now let's take a look at the changes. What actually happened? We introduced the utilities.
+[00:16:09] I don't think much changed there during the latest Doom loop. There's no async magic.
+[00:16:16] Let me put this diff side by side. What the fuck was this?
+[00:16:26] Oh there was already some exponential backoff in the original test. Okay.
+[00:16:32] Sure.
+[00:16:34] Sure.
+[00:16:54] Yeah we're losing some power here. So I'm gonna.
+[00:17:04] How are we gonna do this? The problem is that I'm using a testing framework that like prints out
+[00:17:10] whatever I put in the assertion. Now I'm losing that power so now I'm only getting a red screen.
+[00:17:15] The test pass that are test failed message but I'm not getting the white failed message.
+[00:17:20] But okay let's not take mix steps. We're doing exponential backoff and that seems to work.
+[00:17:27] The mcp tests take four seconds which is long. Hybrid takes four seconds so there's like a four
+[00:17:36] second startup time I'm thinking. So this is like where I would stop. I'm gonna do one more hybrid
+[00:17:43] but then we're gonna stop because this approach to test automation will not scale. If like Cloud
+[00:17:49] would be doing looping or if this was a team not working with AI assisted coding tools.
+[00:17:54] 12 second wait time for like test feedback. If you do test driven development,
+[00:17:59] acceptant test driven development that is unacceptable or that is like a hard upper bound.
+[00:18:05] If I write all my tests like this we have like test suites that take minutes hours. That is not how
+[00:18:10] you effectively build software even with AI. You need quicker feedback. So this is why I'm like
+[00:18:17] building my test pyramid still. I'm writing like high level end to end smoke tests.
+[00:18:23] And then I write like unit tests very coarse grained not method level but like
+[00:18:28] if you look at hexagonal design I test my core end to end and I test my integration points separately
+[00:18:36] with integration tests. But that's it. I don't write all my tests like this. I see a lot of people
+[00:18:40] on LinkedIn going like oh you should be writing higher level tests with this stuff. No or yeah
+[00:18:46] but you should write them in unit test format speedy no external dependencies.
+[00:18:53] If you want like if you see these things doom loop and it sometimes needs three four or five
+[00:19:00] attempts to get through a compile test phase good luck on you with that approach. I wish you
+[00:19:06] good luck but I'm going to do it differently. Anyway sorry for that small rant. So tests are
+[00:19:13] working and I am happy with the results. I'm gonna commit this. This was a exponential back off so
+[00:19:30] let's already push that and now let's continue.
+[00:19:36] Let's continue work.
+[00:19:38] The tests currently cannot be run like in parallel. There's some threading issues but let's ignore
+[00:19:46] that for now. So for now on I do not want you to run more than one unit test at a time. Now let's
+[00:19:55] continue to work on the second hybrid test. So please read the following file.
+[00:20:01] I'm going to point it to our plan so it knows what to do.
+[00:20:13] And let's continue on the second hybrid smoke test which is the CLI input and we verify through
+[00:20:20] the mcp server interactions that we see the input and like the evaluated output.
+[00:20:31] I'm going to put it out of auto accept mode. Let's hold it back a while until we see that
+[00:20:36] we're going in the right direction. So we don't need to be looking at code. We need to be looking at
+[00:20:41] plans. Console to mcp verification. Yeah.
+[00:20:48] The semantic search like knowing which files it should take a look at. It's actually pretty decent.
+[00:21:07] I don't often have to point it like to a file in my code base. If I pointed it like the entry
+[00:21:13] point the main method or my tests it figures out where it has to go. So I don't know how
+[00:21:18] clod code is doing the semantic search. I don't think they'll they'll be using a vector database.
+[00:21:23] I think it's all like grep based but it's really decent for software development tasks. So let's
+[00:21:29] take a look at a plan. Let's first validate whether or not this is the actual smoke test.
+[00:21:43] Send the shortcode over to mcp and what's the hybrid one? Okay. The one we have is mcp in console
+[00:21:50] out. We need to do console in mcp out. Console in mcp out. Yeah. So this is correct.
+[00:22:01] Yes. Yes.
+[00:22:02] I'm not sure about these steps but let's let's have it fill it in concretely.
+[00:22:23] Yeah. I think I'm like what I'm seeing. Success criteria. What are the acceptance criteria here?
+[00:22:32] I'm going to ask it to ignore the independent thing. We'll fix it ourselves.
+[00:22:44] Ignore that last point about test running independently. We will be fixing that in a later
+[00:22:49] session. So this plan looks good. So we're going to have it take a stab at it.
+[00:23:02] And we'll put it in auto accept mode. Why not? This is the third time we're doing something
+[00:23:10] similar. So my hands are off the steering wheel.
+[00:23:32] Okay. So it's churning out some code. Let's take a look at this initial version.
+[00:23:44] No, it's starting the web app twice. So let's kill it.
+[00:23:50] The web application factory thing already starts the app. You don't need to like do the configure
+[00:23:55] app thing. We're mixing two startup paradigms here. I prefer the web application factory. So do that
+[00:24:01] one in this test. So we're seeing lots of things and I want to keep this thing focused on one job,
+[00:24:10] but the things we're noticing I'm going to write down explicitly. We could do it in the plan
+[00:24:14] actually. So let's do that. Let me grab the plan and let's put a big to do list or a test list or
+[00:24:22] a task list on top.
+[00:24:46] There we go. So these are the things that I noticed that we have to fix, but
+[00:24:49] just as I wouldn't do that when I was programming manually, I won't do that with cloud code. I
+[00:24:56] definitely won't do that with cloud code. So is it doing the right thing here? No, fuck you.
+[00:25:09] No, fuck you. It's doing the complete opposite. No, let's push back hard on this.
+[00:25:17] I prefer the web application route. So if it's tricky to capture IO there, let's troubleshoot
+[00:25:23] that instead of going the other way.
+[00:25:31] The issue is that web allocation factory runs in a test context. So console redirection works for
+[00:25:35] the entire test process.
+[00:25:46] So this is the area where I know cloud will fuck up and keep fucking up. So if it doesn't one shot
+[00:26:03] it, we'll start debugging ourselves.
+[00:26:17] I'm setting up console redirection before starting the app. So the Aphasizer should
+[00:26:22] pick up the redirects and streams.
+[00:26:27] Yeah, I would expect that to be the case.
+[00:26:34] Like these programming like CLI tools with lots of concurrency, race conditions, that's
+[00:26:40] already pretty hard. But layering training a puppy like cloud code on top makes it even harder.
+[00:26:48] So while I am more productive, especially because the boring stuff, I can go fast around.
+[00:26:56] My brain gets tired more quickly. This is harder work than what I'm used to. Definitely.
+[00:27:06] So this won't be for everyone that I'm sure of.
+[00:27:11] Oh, actually, it ran the test. And it's saying that is green.
+[00:27:23] That would I would be slightly impressed. So let's trust but verify.
+[00:27:32] The plan we updated the plan so that is good.
+[00:27:37] Rider is crashing so that is not good.
+[00:27:40] Or it's not crashing. It's building in somehow that takes up all the UIs threats.
+[00:27:53] Okay, so let's take a look at the smoke test. Let's first gloss over the
+[00:27:59] diff. Okay, so it's only adding a new test I like. Let's take a look at that new test.
+[00:28:06] It's hybrid one. So yeah, we should be in the right spot. Yeah, here it is.
+[00:28:11] Yes, we recognize this. We recognize this. We recognize this. We piped in the input stream.
+[00:28:21] Then we start the app.
+[00:28:24] We start our MCP client. We wait. I'm not sure if this is still needed, but okay, let's focus.
+[00:28:32] Did we already send?
+[00:28:44] Oh, what the fuck is it doing? It's sending stuff in through CLI.
+[00:28:51] Then it's printing. What is this output thing? Is it actually? Okay, it's using the exit unit
+[00:28:58] thing. So okay, this would actually work. Sure, what the fuck is this thing?
+[00:29:09] We are pulling the get recent output or get recent FSI statements. So yeah, and we're pulling.
+[00:29:21] And we're pulling to see if the both the input and the output is in there. So
+[00:29:29] actually pretty good. There's like duplicate the surgeons here. So it's not how I would write it,
+[00:29:35] but I think if this test succeeds, we're good.
+[00:29:39] Okay.
+[00:29:54] Yeah, so we see the input here. We see the output here.
+[00:29:58] I put 50 my face is in the way, but trust me, this looks good.
+[00:30:05] Okay, cool.
+[00:30:09] Not 100% happy, but 90% happy. So if this were like a junior colleague, I would ask him to brush up.
+[00:30:18] Before we brush up, I'm going to fix like the structural issues where we identified. So
+[00:30:27] I am very bad at multitasking. So forgive me. Let's commit these changes.
+[00:30:38] This looks good. Please update our progress in the markdown file.
+[00:30:50] And we haven't been programming along. If we were like working for an hour,
+[00:30:54] I would of course take a break, but I would also reset the cloud session. So it's not
+[00:30:58] clogging up the context window. We will be working on the same things, but we were like
+[00:31:02] super focused on writing a new test. And now we want to shift attention to something else.
+[00:31:07] Actually, I just convinced myself that we should clear the session and start from scratch.
+[00:31:15] The more like random stuff I feed into the context, the more random cloud gets. So I like to keep it
+[00:31:20] focused.
+[00:31:24] Okay, so
+[00:31:39] it's lying. That is something we cannot fix. Or actually, is it lying? Did we have two startup
+[00:31:46] paradigms or did it refactor? So our utilities console is doing, yeah, yeah, we have two
+[00:31:54] startup paradigms. So it's like even lying on lying. I know it's not like, but this was not
+[00:32:00] correct, at least. So update the plan. Let's reset the session.
+[00:32:15] Yeah, let's reset the session. I was like having an internal monologue. Should we reset the session?
+[00:32:19] Yes, we should.
+[00:32:23] Please read smoke testing plan markdown file. And we will be working on one of the tasks in
+[00:32:29] the task lists, we will be working on the two app startup paradigms in smoke tests.
+[00:32:35] It's not resolved. We will be doing it right now.
+[00:32:41] It was like a resolved in here that I missed. Lies.
+[00:33:00] Yeah, that is the exact issue. So, yeah, and that's also the direction we want to go in. So
+[00:33:28] it's hands off mode, although except that it's
+[00:33:37] trust, but verify however.
+[00:33:43] Yeah, okay, so this is the direction. One thing that pops in my head is we have to
+[00:33:49] see these tests fail. So let's introduce some bugs in a second to verify that they're still
+[00:33:54] testing what we think they are testing. I think I learned that from JB Reinsberger,
+[00:34:00] defect injection. If you do test driven development, you don't need it. If you're doing this,
+[00:34:07] you definitely need it.
+[00:34:16] No, no, no.
+[00:34:19] Oh, maybe this would fix the concurrency issue. So I'm curious.
+[00:34:24] Actually, there is a chance that this fixes both of our problems.
+[00:34:32] So, of course, it doesn't. So let's verify ourselves.
+[00:34:57] Let's kill out of a
+[00:35:03] clod and let's take a look at the tests. So what did it do? Except confuse the hell out of writer.
+[00:35:14] I'm quickly rebuilding.
+[00:35:19] There we go. So what did it do? It changed the console smoke tests and it left the rest alone.
+[00:35:24] So I like seeing that. Let's take a look at those smoke tests.
+[00:35:34] Yeah, so it's using a web application factory. It's spinning up a client, but it doesn't need a client.
+[00:35:42] That's true. So we can get rid of it.
+[00:35:44] All these various comments, I don't like it. We are pulling. Oh, this test has cleaned up
+[00:35:54] rather nicely, actually. It's like almost a one screen kind of kind of deal. Let's see whether or
+[00:36:00] not it works.
+[00:36:01] And next, let's do some defect injection.
+[00:36:18] 15 seconds is a long time to be waiting.
+[00:36:32] Now I'm thinking that maybe the client introduces some kind of delay. So I'm going to put it back in.
+[00:36:40] I'm going to get rid of some shit. Let's rerun this one.
+[00:36:48] Is piping in the correct things? Yes, it is.
+[00:36:55] Yes, it is.
+[00:36:56] Oh, so it's green. Cool.
+[00:37:15] I'm not too sure, actually. I see the output, but I don't see the input. Where is this?
+[00:37:22] Let's do equals one plus three thing.
+[00:37:28] Probably because we feed in script before we start listening to IO. So I'm not too worried
+[00:37:36] about that. That looks actually pretty decent. Let's inject the defect here.
+[00:37:40] I'm pretty sure it'll work, but just to be sure, it takes 15 seconds of our life. So that's okay.
+[00:37:58] I planned on retiring in a year. So that's a joke.
+[00:38:04] Okay, cool. So this is what I was saying that it doesn't really print out the
+[00:38:12] why it fails. It's just like red. Don't like that. We need to fix that as well.
+[00:38:17] But for now, every test individually is following the same paradigm and is consistently green.
+[00:38:25] So I'm going to update the plan myself.
+[00:38:27] What was the thing we just said?
+[00:38:39] What didn't I like?
+[00:38:47] I already forgot. I have to rewatch this stream myself.
+[00:38:51] But I think we are done with the startup paradigms. So I'm going to commit this.
+[00:38:57] And I know you can ask Claude to like commit and provide commit messages. But for this,
+[00:39:05] I liked to remain in control. So from the top of my head, we need to do the concurrent thing.
+[00:39:24] But there's one thing I want to do first. So there you go. Coherency is still not fixed.
+[00:39:30] I had like a slight hope that it would. But before we do that, I want to like clean up the
+[00:39:35] smoke test just a smidge. Do I? Actually, it's pretty decent. There's like only three, four tests.
+[00:39:44] So the amount possible duplication is very manageable. Let me push to production.
+[00:39:54] And let's continue with our plan.
+[00:40:00] So this was like a pretty one shot kind of thing. I'm not going to reset the session.
+[00:40:04] It knows about what we're working on. Now I'm going to ask it for suggestions on the
+[00:40:09] concurrency issues. This is where I have more success with OpenAI, the deep thinking models.
+[00:40:16] So I'm curious what puppy Claude code would do.
+[00:40:38] So yeah, it's consistently failing when I run the entire test suite. There is a
+[00:40:44] race condition, shared state, whatever kind of thing. And people are claiming that
+[00:40:50] they get lots of help when thinking about these things.
+[00:40:56] ShadGPD does help me, Claude code. I get a feeling like it's just trying random shit.
+[00:41:02] So let's let's try it one more time.
+[00:41:04] I finished up the work myself. That test looks good and the startup paradigm looks consistent.
+[00:41:15] Now let's shift to the running the tests concurrently or running the entire test suite,
+[00:41:21] like that has flickering that has intermittent failures. Now please do not run the tests.
+[00:41:28] But first let's formulate a plan on how we will troubleshoot this. Think deeply.
+[00:41:39] Okay, so we have a clean hits directory, no pending changes.
+[00:41:58] Okay, we're building a troubleshooting plan. That's something I would do as well.
+[00:42:06] It's still having like internal monologue here. Which way is it going?
+[00:42:13] That's a good point console hijacking is not threat safe.
+[00:42:17] I don't care. I like that they start their individual web servers.
+[00:42:30] I would hope not.
+[00:42:34] I would hope that every test runs its own web server.
+[00:42:47] No explicit test collection control or isolation mechanisms.
+[00:42:52] XUnit has a philosophy about this so not really super convinced that we need to be
+[00:43:00] taking a look at that. Okay, so what has it identified after some internal monologue?
+[00:43:07] Oh my god, it's created an investigation priority matrix which takes five days of work.
+[00:43:12] Okay, let's take a look.
+[00:43:20] I'm willing to give it a win on the first point. That is a concern.
+[00:43:34] That is not a concern.
+[00:43:36] That is probably not a concern.
+[00:43:43] I will never do five. So let's focus on one first.
+[00:43:50] Really, is there a way to force XUnit to run sequentially?
+[00:43:58] Actually, if that fixes it, I'm not going to bother redesigning, re-architecting.
+[00:44:03] Okay, if the easy fix is to have our smoke tests run sequentially, let's try that.
+[00:44:19] It's proposing a five-day hardening sprint.
+[00:44:26] All these people saying that fully-agentic software development is the future,
+[00:44:31] be smoking different stuff than I am.
+[00:44:39] Or they have a lot more money to spend on token spend and LLM usage.
+[00:44:52] So this is increased hard test suite from 15 seconds to a minute, which is not ideal.
+[00:45:01] But I don't expect to be working on this codebase for years. I just want to have something working
+[00:45:13] and have some kind of regression in place. If this were a very active codebase,
+[00:45:17] I would never dream of building a test suite that has a minute-long feedback cycle.
+[00:45:25] But for this, it's okay.
+[00:45:26] Ready to test. Go.
+[00:45:41] Never use sequential on your unit tests, except when you're doing system-level stuff.
+[00:45:47] My mouse is... Okay, there we go.
+[00:45:50] If you have to use this for your unit tests, you're doing something wrong.
+[00:45:57] Why the fuck did it only add it to... Okay, it's adding it to the classes, not the test methods.
+[00:46:04] I'm sorry. Sorry. Yeah, that looks good.
+[00:46:09] And we're back into epileptic flickering.
+[00:46:13] I have still not figured out what's causing this or whether this is by design, but it's not fun.
+[00:46:27] I seem to have this less when I do a separate shell, not like this built-in shell.
+[00:46:33] So maybe I should just start doing that for streams or for all work.
+[00:46:43] Okay, it's running all the tests now. They should be running in sequence.
+[00:46:51] Test run failed.
+[00:46:56] Good progress. Sequential execution improved results significantly. 4 out of 5.
+[00:47:10] Pass consistently. I would not use the word consistently.
+[00:47:16] The test is capturing the starter banner in an FSI version, but not the actual code
+[00:47:19] evaluation result. We have seen this before.
+[00:47:32] We've literally seen this two seconds ago, right? This is something we were seeing this session.
+[00:47:38] Okay, so I'm going to take a mental note of what it says, but I'm going to again verify myself.
+[00:48:08] I cannot believe how many times I've seen this warning and how many times I fixed this fucking
+[00:48:14] warning. How can it keep forgetting that it's a DLL and not a console app? Oh, interesting.
+[00:48:22] It's not changing the project file.
+[00:48:29] How is this a thing?
+[00:48:30] How is this not changing the FS project file?
+[00:48:44] Output type library. There you go. The fuck. Why does it keep building it like an executable?
+[00:48:51] I'm getting derailed again. Sorry.
+[00:48:56] There we go.
+[00:49:00] Of course, the test is green.
+[00:49:13] Output found. I expected that. Actually, we are not seeing the input, which I think we used to see.
+[00:49:37] But with the whole startup paradigm rework, I kind of expected half expected to not work.
+[00:49:55] Yeah, I'm willing to actually, if this is consistently green,
+[00:50:00] I'm willing to give it a pass. So let's run our suite a couple of times.
+[00:50:06] Okay, that's the first one takes 12 seconds. Actually, that's not pretty bad.
+[00:50:25] This five day refactoring sprint is pretty hilarious, right?
+[00:50:29] Okay, computers. Okay, I am pleased as a puppy.
+[00:50:40] Fixed. We didn't fix it work.
+[00:50:47] So we run our smoke tests in sequence now, and that seems to actually fix all our things.
+[00:50:59] So yeah, for what we want to do, for what I wanted to do with this project was one,
+[00:51:05] build an mcp server for fsharp interactive, and to evaluate whether clot code is useful in
+[00:51:12] like the hard ports, not just developing another credit API or a new web app, but actually doing
+[00:51:18] some heavy lifting. I think in the end, it hindered me in some places. So for the bootstrapping part,
+[00:51:31] it was definitely useful. Once we got into hairy, multi-threading race condition waters,
+[00:51:38] I would not recommend fighting your way through with clot. I would recommend either thinking
+[00:51:43] yourself or leveraging GPT pro model to help you with the thinking. Because yeah, that's the feeling
+[00:51:52] I'm getting after working with this for what three weeks now. Claude is the puppy and will run
+[00:52:00] towards the first shiny thing it sees, which is not always the best direction.
+[00:52:05] But I'm learning when I need to keep my hands on the steering wheel and when I need to or when I can
+[00:52:10] trust it to drive by itself for a while. And of course, this is not a scientific experiment.
+[00:52:17] Neither was my previous or my first video about this stuff.
+[00:52:24] But my heuristic is I allow it like the brute force for one or two loops. And if it's not
+[00:52:30] succeeding, I intervene to see what's happening. So I think I'm finding a sweet spot on how to use
+[00:52:36] these tools. And I'll formulate everything a bit more concretely. Once I have like,
+[00:52:43] more experience, but that's where I am at right now. So yeah, let me quickly,
+[00:52:49] we've been heavily refactoring our code base. So let me quickly do an end to end human test,
+[00:52:54] see where another everything is still working.
+[00:53:02] So I built my release version. This also like replaces my sharp interactive
+[00:53:10] warning is back. Sorry, this replaces my interactive process in writer itself. So
+[00:53:15] whenever I like send code to interactive now, it'll use the mcp server we are developing.
+[00:53:20] So when I do this, now it's running that mcp server we are developing.
+[00:53:26] Yeah, okay, so console IO is working.
+[00:53:30] Yeah, let me quickly run a mcp inspector to see that mcp server is working.
+[00:53:40] If power shell feels like waking up at least, let me go.
+[00:53:53] Let's run mcp inspector.
+[00:54:09] Okay, should open the browser. There we go. Meet mcp inspector again. Let's connect.
+[00:54:17] Let's list the tools. So yeah, that's all working. Let's see whether we can read FSA
+[00:54:22] output. We can let's send some code over from inspector.
+[00:54:30] There we go. That appears to be working. Let's take a look at our actual shell.
+[00:54:48] Which is the debug window. Where is my debug debug?
+[00:54:55] Where's the debug window?
+[00:55:00] I'm looking for the little bug icon.
+[00:55:13] Debug alt five.
+[00:55:18] Oh yeah, I'm running FSI. Sorry. I should be taking a look at interactive.
+[00:55:25] This is like mind-bendingly meta.
+[00:55:31] Where is the FSI window?
+[00:55:36] Let's resend some code to have it pop up.
+[00:55:43] Okay, there it is. It's run Fsharp interactive. Okay, so yeah, hello from inspector. You see the
+[00:55:49] input here. You see the output here. So everything is working as expected. The final thing we can try
+[00:55:54] is having an actual AI agent. So having clot actually use this mcp server. So let's give
+[00:56:01] that a try now. Do mcp inspector again. We can kill that. Let's go back to clot. Let's exit out.
+[00:56:11] Let's restart clot so it picks up mcp servers.
+[00:56:24] Sorry, no content. Okay. Yeah, so it reads my mcp server just fine. Let's now test it out. I have a
+[00:56:37] system prompt for this called fsi client. I'm going to point it to scratch. FSI to the file we're working
+[00:56:50] on. And now let's ask it a question and hopefully it'll start writing code
+[00:57:00] and evaluating it through mcp. So yeah, okay, I can see it send all kinds of things.
+[00:57:10] Okay, now let's ask it to write some code.
+[00:57:14] How many letter Rs are in the word strawberry?
+[00:57:20] That's like very Dutch English. Oh, shit. I was still in dictation mode.
+[00:57:30] So I'm expecting it to write tests in the FSx files or take to write code and to use mcp. So yeah,
+[00:57:36] here is the Fsharp code. And then I see it sending it over mcp. So that's all working fine. And then
+[00:57:44] it should look at the output. And then it should remain silent and we can take a look in the run
+[00:57:52] window. I did not set anything. Code sent to fsi and logged get recent events. It's not seeing the
+[00:58:08] same that we are. Oh, no, sorry, I wasn't scrolling. So yeah, it's all working. And we can see here.
+[00:58:14] So how I typically work is like I have a dictation app somewhere. And then I see the output here.
+[00:58:20] So yeah, it's working perfectly. Mission complete. I learned a lot about coding with LMS or with AI
+[00:58:26] agents. Yeah, so I hope you had fun. I'll edit this a bit to make it a more pleasant watching
+[00:58:33] experience. And I hope to see you next time. Bye bye. 
